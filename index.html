@@ -1,552 +1,796 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>قصر الأميرات - نظام الحجز والتحكم</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<style>
-:root{--primary-gold:#d4af37;--dark-gold:#aa7c11;--bg-dark:#0f1117;--card-bg:#1a1d24;--text-light:#f8f9fa;--text-muted:#a0a5b5;--accent-green:#2ecc71;--accent-red:#e74c3c;--accent-blue:#3498db;--border-color:rgba(212,175,55,.25);--whatsapp-green:#25D366}
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg-dark);color:var(--text-light);padding-bottom:60px;overflow-x:hidden}
-.toast-notification{position:fixed;top:-120px;left:50%;transform:translateX(-50%);padding:14px 28px;border-radius:30px;font-weight:700;font-size:1rem;color:#fff;z-index:99999;box-shadow:0 8px 25px rgba(0,0,0,.8);transition:top .4s cubic-bezier(.175,.885,.32,1.275);max-width:92vw;text-align:center;border:1px solid rgba(255,255,255,.2);pointer-events:none}
-.toast-notification.success{background:linear-gradient(135deg,#2ecc71,#27ae60)}
-.toast-notification.error{background:linear-gradient(135deg,#e74c3c,#c0392b)}
-.toast-notification.show{top:25px}
-header{text-align:center;padding:40px 20px 25px;background:linear-gradient(180deg,rgba(212,175,55,.15),rgba(15,17,23,0));border-bottom:1px solid var(--border-color);position:relative}
-header h1{font-size:2.2rem;font-weight:900;color:var(--primary-gold);text-shadow:0 0 15px rgba(212,175,55,.3)}
-header p{color:var(--text-muted);font-size:.95rem}
-.admin-nav-btn{position:absolute;top:15px;left:15px;background:rgba(212,175,55,.1);border:1px solid var(--primary-gold);color:var(--primary-gold);padding:8px 16px;border-radius:20px;cursor:pointer;font-weight:700;font-size:.85rem}
-.container{max-width:900px;margin:25px auto;padding:0 15px}
-.admin-panel-bar{background:rgba(212,175,55,.12);border:1px solid var(--primary-gold);padding:15px 20px;border-radius:12px;margin-bottom:25px;display:none;flex-direction:column;gap:12px}
-.admin-bar-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.admin-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.admin-btn{background:var(--primary-gold);border:none;color:#000;padding:8px 14px;border-radius:6px;font-weight:bold;font-size:.85rem;cursor:pointer}
-.admin-btn:active{transform:scale(.96)}
-.admin-btn-red{background:var(--accent-red);color:#fff}
-.admin-btn-green{background:var(--accent-green);color:#fff}
-.admin-btn-blue{background:var(--accent-blue);color:#fff}
-.sync{font-size:.8rem;padding:3px 10px;border-radius:12px;font-weight:700;margin-right:8px}
-.sync.on{background:rgba(46,204,113,.2);color:var(--accent-green)}
-.sync.off{background:rgba(231,76,60,.2);color:var(--accent-red)}
-.admin-hint{font-size:.8rem;color:var(--text-muted);line-height:1.7}
-.perm-warn{display:none;background:rgba(231,76,60,.15);border:1px solid var(--accent-red);color:#ffb3aa;border-radius:8px;padding:10px 12px;font-size:.85rem;line-height:1.8}
-.instructions{background:var(--card-bg);padding:15px 20px;border-radius:12px;border-right:4px solid var(--primary-gold);margin-bottom:30px;display:flex;gap:15px;flex-wrap:wrap;align-items:center;justify-content:space-around}
-.legend-item{display:flex;align-items:center;gap:8px;font-size:.9rem}
-.legend-color{width:16px;height:16px;border-radius:4px}
-.legend-available{background:#2a2e3d;border:1px solid var(--border-color)}
-.legend-selected{background:var(--accent-green)}
-.legend-booked{background:var(--accent-red);opacity:.8}
-.apartments-list{display:flex;flex-direction:column;gap:25px;margin-bottom:40px}
-.empty{background:var(--card-bg);border:1px dashed var(--border-color);border-radius:14px;padding:30px;text-align:center;color:var(--text-muted);line-height:1.9}
-.apartment-card{background:var(--card-bg);border-radius:16px;border:1px solid var(--border-color);padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.4)}
-.apartment-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:12px;margin-bottom:15px}
-.apartment-title{font-size:1.3rem;color:var(--primary-gold);font-weight:700}
-.badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.floor-badge{background:rgba(212,175,55,.15);color:var(--primary-gold);padding:4px 12px;border-radius:20px;font-size:.85rem}
-.free-badge{background:rgba(46,204,113,.15);color:var(--accent-green);padding:4px 12px;border-radius:20px;font-size:.85rem}
-.free-badge.none{background:rgba(231,76,60,.15);color:var(--accent-red)}
-.mini-actions{display:flex;gap:6px;flex-wrap:wrap}
-.mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:4px 9px;font-size:.78rem;cursor:pointer}
-.mini.danger{background:rgba(231,76,60,.25)}
-.room-section{background:rgba(0,0,0,.25);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,.03)}
-.room-title{font-size:.95rem;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
-.room-tag{font-size:.78rem;color:var(--primary-gold);background:rgba(212,175,55,.12);padding:2px 8px;border-radius:4px;margin-right:6px}
-.beds-container{display:flex;gap:12px;flex-wrap:wrap}
-.bed-btn{flex:1;min-width:100px;padding:14px 8px;background:#2a2e3d;border:2px solid var(--border-color);border-radius:10px;color:var(--text-light);cursor:pointer;text-align:center;font-size:.9rem;transition:all .2s;position:relative;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.bed-btn.selected{background:var(--accent-green)!important;color:#fff!important;border-color:#fff!important;font-weight:bold;box-shadow:0 0 12px rgba(46,204,113,.6);transform:scale(1.02)}
-.bed-btn.booked{background:var(--accent-red)!important;color:#fff!important;opacity:.85;border-color:var(--accent-red);cursor:not-allowed}
-.bed-btn.booked .bed-label{text-decoration:line-through}
-.bed-btn.booked small{display:block;font-size:.7rem;opacity:.9}
-body.is-admin .bed-btn.booked{cursor:pointer}
-.bed-del-btn,.bed-edit-btn{position:absolute;top:-9px;color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.5);z-index:5}
-.bed-del-btn{right:-8px;background:var(--accent-red)}
-.bed-edit-btn{left:-8px;background:var(--accent-blue)}
-.booking-summary{background:var(--card-bg);border:1px solid var(--primary-gold);border-radius:16px;padding:25px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-.booking-summary h2{color:var(--primary-gold);margin-bottom:20px;font-size:1.4rem;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:10px}
-.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}
-.form-group{margin-bottom:15px}
-.form-group label{display:block;margin-bottom:8px;font-size:.9rem}
-.form-group input{width:100%;padding:12px 15px;border-radius:8px;border:1px solid #333;background:#12141a;color:#fff;font-size:1rem;outline:none}
-.form-group input:focus{border-color:var(--primary-gold)}
-.selected-list{background:#12141a;padding:12px;border-radius:8px;margin-bottom:20px;min-height:45px;font-size:.88rem;color:var(--primary-gold);border:1px dashed rgba(212,175,55,.3);line-height:1.9}
-.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary-gold),var(--dark-gold));border:none;border-radius:8px;color:#000;font-size:1.05rem;font-weight:700;cursor:pointer}
-.submit-btn:disabled{background:#333;color:#777;cursor:not-allowed}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;transition:all .3s;backdrop-filter:blur(5px)}
-.modal-overlay.active{opacity:1;visibility:visible}
-.modal-content{background:var(--card-bg);border:2px solid var(--primary-gold);border-radius:18px;padding:25px;width:92%;max-width:500px;text-align:center;max-height:90vh;overflow-y:auto}
-.whatsapp-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--whatsapp-green);color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;margin-top:20px}
-.admin-table-container{max-width:900px;text-align:right}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;margin-top:15px;font-size:.82rem}
-th,td{padding:8px;border:1px solid var(--border-color);text-align:center}
-th{background:rgba(212,175,55,.2);color:var(--primary-gold);white-space:nowrap}
-td a{color:var(--whatsapp-green)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قصر الأميرات - نظام الحجز والتحكم الشامل</title>
+    <!-- خط عربي أنيق -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --primary-gold: #d4af37;
+            --dark-gold: #aa7c11;
+            --bg-dark: #0f1117;
+            --card-bg: #1a1d24;
+            --text-light: #f8f9fa;
+            --text-muted: #a0a5b5;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-blue: #3498db;
+            --border-color: rgba(212, 175, 55, 0.25);
+            --whatsapp-green: #25D366;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-dark); color: var(--text-light); padding-bottom: 60px; overflow-x: hidden; }
+
+        /* Toast Notification بارز نازل من الأعلى */
+        .toast-notification {
+            position: fixed; top: -120px; left: 50%; transform: translateX(-50%);
+            padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 1.05rem; color: #fff;
+            z-index: 99999; box-shadow: 0 8px 25px rgba(0,0,0,0.8); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .toast-notification.success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-notification.error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-notification.show { top: 25px; }
+
+        /* Header */
+        header {
+            text-align: center; padding: 40px 20px 25px 20px;
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.15) 0%, rgba(15, 17, 23, 0) 100%);
+            border-bottom: 1px solid var(--border-color); position: relative;
+        }
+        header h1 { font-size: 2.2rem; font-weight: 900; color: var(--primary-gold); text-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+        header p { color: var(--text-muted); font-size: 0.95rem; }
+
+        .admin-nav-btn {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary-gold);
+            color: var(--primary-gold); padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; font-weight: 700; font-size: 0.85rem;
+        }
+
+        .container { max-width: 900px; margin: 25px auto; padding: 0 15px; }
+
+        /* Admin Control Bar */
+        .admin-panel-bar {
+            background: rgba(212, 175, 55, 0.12); border: 1px solid var(--primary-gold);
+            padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; display: none;
+            flex-direction: column; gap: 12px;
+        }
+
+        .admin-bar-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+        .admin-btn {
+            background: var(--primary-gold); border: none; color: #000;
+            padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .admin-btn:active { transform: scale(0.96); }
+        .admin-btn-red { background: var(--accent-red); color: #fff; }
+        .admin-btn-green { background: var(--accent-green); color: #fff; }
+        .admin-btn-blue { background: var(--accent-blue); color: #fff; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); }
+
+        /* Instructions & Legend */
+        .instructions {
+            background: var(--card-bg); padding: 15px 20px; border-radius: 12px;
+            border-right: 4px solid var(--primary-gold); margin-bottom: 30px;
+            display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-around;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+        .legend-color { width: 16px; height: 16px; border-radius: 4px; }
+        .legend-available { background-color: #2a2e3d; border: 1px solid var(--border-color); }
+        .legend-selected { background-color: var(--accent-green); }
+        .legend-booked { background-color: var(--accent-red); opacity: 0.8; }
+
+        /* Apartments Structure */
+        .apartments-list { display: flex; flex-direction: column; gap: 25px; margin-bottom: 40px; }
+        
+        .apartment-card {
+            background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);
+            padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .apartment-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 15px;
+        }
+
+        .apartment-title { font-size: 1.3rem; color: var(--primary-gold); font-weight: 700; }
+
+        .floor-badge {
+            background: rgba(212, 175, 55, 0.15); color: var(--primary-gold);
+            padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;
+        }
+
+        /* Room & Beds */
+        .room-section {
+            background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px;
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .room-title {
+            font-size: 0.95rem; color: var(--text-light); margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center; font-weight: 600;
+        }
+
+        .room-tag { font-size: 0.78rem; color: var(--primary-gold); background: rgba(212, 175, 55, 0.12); padding: 2px 8px; border-radius: 4px; }
+        .beds-container { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .bed-btn {
+            flex: 1; min-width: 100px; padding: 12px 8px; background: #2a2e3d;
+            border: 2px solid var(--border-color); border-radius: 10px; color: var(--text-light);
+            cursor: pointer; text-align: center; font-size: 0.9rem; transition: all 0.2s ease;
+            position: relative; user-select: none; outline: none;
+        }
+
+        .bed-btn.selected { 
+            background: var(--accent-green) !important; 
+            color: #fff !important; 
+            border-color: #fff !important; 
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(46, 204, 113, 0.6);
+            transform: scale(1.02);
+        }
+        .bed-btn.booked { background: var(--accent-red) !important; color: #fff !important; opacity: 0.85; text-decoration: line-through; border-color: var(--accent-red); cursor: not-allowed; }
+
+        .bed-del-btn {
+            position: absolute; top: -8px; right: -8px; background: var(--accent-red);
+            color: white; border: none; border-radius: 50%; width: 22px; height: 22px;
+            font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 5;
+        }
+
+        /* Card Form & Complaint Section */
+        .card-box {
+            background: var(--card-bg); border: 1px solid var(--primary-gold);
+            border-radius: 16px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 30px;
+        }
+
+        .card-box h2 { color: var(--primary-gold); margin-bottom: 20px; font-size: 1.4rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-light); font-size: 0.9rem; }
+        
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px 15px; border-radius: 8px;
+            border: 1px solid #333; background: #12141a; color: #fff; font-size: 0.95rem; outline: none;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary-gold); }
+
+        .selected-list {
+            background: #12141a; padding: 12px; border-radius: 8px; margin-bottom: 20px;
+            min-height: 45px; font-size: 0.88rem; color: var(--primary-gold); border: 1px dashed rgba(212, 175, 55, 0.3);
+        }
+
+        .submit-btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary-gold) 0%, var(--dark-gold) 100%);
+            border: none; border-radius: 8px; color: #000; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal-content {
+            background: var(--card-bg); border: 2px solid var(--primary-gold);
+            border-radius: 18px; padding: 25px; width: 90%; max-width: 500px; text-align: center;
+        }
+
+        .whatsapp-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background-color: var(--whatsapp-green); color: white; text-decoration: none;
+            padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 1rem; margin-top: 20px;
+        }
+
+        .admin-table-container { max-width: 850px; max-height: 80vh; overflow-y: auto; text-align: right; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        th, td { padding: 10px; border: 1px solid var(--border-color); text-align: center; }
+        th { background: rgba(212, 175, 55, 0.2); color: var(--primary-gold); }
+    </style>
 </head>
 <body>
 
-<div id="toastNotification" class="toast-notification"></div>
+    <!-- Notification Toast -->
+    <div id="toastNotification" class="toast-notification"></div>
 
-<header>
-  <button class="admin-nav-btn" id="adminNavBtn" onclick="openAdminModal()">لوحة الإدارة 🔒</button>
-  <h1>🏰 قصر الأميرات</h1>
-  <p>نظام الحجز والتحكم الإلكتروني الشامل</p>
-</header>
+    <header>
+        <button class="admin-nav-btn" onclick="openAdminModal()">لوحة الإدارة 🔒</button>
+        <h1>🏰 قصر الأميرات</h1>
+        <p>نظام الحجز والتحكم الإلكتروني الشامل</p>
+    </header>
 
-<div class="container">
-  <div class="admin-panel-bar" id="adminBar">
-    <div class="admin-bar-header">
-      <div>
-        <span>🔧 <strong>وضع الإدارة مفعّل</strong></span>
-        <span class="sync off" id="syncBadge">غير متصل</span>
-      </div>
-      <div class="admin-actions">
-        <button class="admin-btn admin-btn-blue" onclick="checkWriteAccess(true)">🧪 اختبار الحفظ</button>
-        <button class="admin-btn admin-btn-green" onclick="addNewApartment()">➕ إضافة شقة</button>
-        <button class="admin-btn" onclick="openBookingsTable()">📋 الحجوزات</button>
-        <button class="admin-btn admin-btn-red" onclick="resetAllApartmentsForce()">🔄 إعادة التجميع</button>
-        <button class="admin-btn admin-btn-red" onclick="logoutAdmin()">خروج</button>
-      </div>
+    <div class="container">
+        <!-- Admin Bar -->
+        <div class="admin-panel-bar" id="adminBar">
+            <div class="admin-bar-header">
+                <div>
+                    <span>🔧 <strong>وضع الإدارة مفعّل</strong></span>
+                </div>
+                <div class="admin-actions">
+                    <button class="admin-btn admin-btn-blue" onclick="saveAdminChanges()">💾 حفظ التغييرات للموقع</button>
+                    <button class="admin-btn admin-btn-green" onclick="addNewApartment()">➕ إضافة شقة</button>
+                    <button class="admin-btn" onclick="openBookingsTable()">📋 الحجوزات</button>
+                    <button class="admin-btn admin-btn-blue" onclick="openComplaintsTable()">💬 الشكاوى والاقتراحات</button>
+                    <button class="admin-btn admin-btn-red" onclick="resetAllApartmentsForce()">🔄 إعادة التجميع</button>
+                    <button class="admin-btn admin-btn-red" onclick="logoutAdmin()">خروج</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="instructions">
+            <div class="legend-item"><div class="legend-color legend-available"></div><span>متاح للحجز</span></div>
+            <div class="legend-item"><div class="legend-color legend-selected"></div><span>تم اختياره</span></div>
+            <div class="legend-item"><div class="legend-color legend-booked"></div><span>محجوز بالفعل</span></div>
+        </div>
+
+        <!-- Apartments List -->
+        <div class="apartments-list" id="apartmentsGrid"></div>
+
+        <!-- Booking Form -->
+        <div class="card-box">
+            <h2>إتمام وحفظ الحجز</h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>السراير المختارة من الأعلى:</label>
+                    <div class="selected-list" id="selectedBedsList">اضغط على السراير في الأعلى لاختيارها أولاً.</div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userName">اسم الحاجز بالكامل (ثلاثي على الأقل):</label>
+                        <input type="text" id="userName" placeholder="مثال: محمد أحمد محمود" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPhone">رقم الهاتف (010/011/012/015):</label>
+                        <input type="tel" id="userPhone" placeholder="01xxxxxxxxx" maxlength="11" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userAge">السن:</label>
+                        <input type="number" id="userAge" placeholder="مثال: 20" min="15" max="40" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userCollege">الكلية / الفرقة:</label>
+                        <input type="text" id="userCollege" placeholder="مثال: هندسة - الفرقة الثانية" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn" disabled>تأكيد الحجز فوراً وتجهيز رسالة الواتساب</button>
+            </form>
+        </div>
+
+        <!-- Complaints Section -->
+        <div class="card-box">
+            <h2>📬 صندوق الشكاوى والاقتراحات</h2>
+            <form id="complaintForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cName">الاسم (اختياري):</label>
+                        <input type="text" id="cName" placeholder="أدخل اسمك أو اتركه فارغاً">
+                    </div>
+                    <div class="form-group">
+                        <label for="cPhone">رقم الهاتف (اختياري):</label>
+                        <input type="tel" id="cPhone" placeholder="01xxxxxxxxx">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="cMessage">نص الشكوى أو الاقتراح:</label>
+                    <textarea id="cMessage" rows="4" placeholder="اكتب شكواك أو اقتراحك هنا بشكل مفصل..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #3498db, #2980b9); color:#fff;">إرسال الشكوى / الاقتراح للإدارة</button>
+            </form>
+        </div>
     </div>
-    <div class="perm-warn" id="permWarn"></div>
-    <div class="admin-hint">💾 أي تعديل بتعمله بيتحفظ على السيرفر فوراً ومش هيرجع تاني. اضغط على أي سرير لقفله/فتحه يدوياً، وأزرار ✎ و ✕ للتعديل والحذف.</div>
-  </div>
 
-  <div class="instructions">
-    <div class="legend-item"><div class="legend-color legend-available"></div><span>متاح للحجز</span></div>
-    <div class="legend-item"><div class="legend-color legend-selected"></div><span>تم اختياره</span></div>
-    <div class="legend-item"><div class="legend-color legend-booked"></div><span>محجوز بالفعل</span></div>
-  </div>
-
-  <div class="apartments-list" id="apartmentsGrid"><div class="empty">جاري تحميل الشقق...</div></div>
-
-  <div class="booking-summary">
-    <h2>إتمام وحفظ الحجز</h2>
-    <form id="bookingForm" novalidate>
-      <div class="form-group">
-        <label>السراير المختارة من الأعلى:</label>
-        <div class="selected-list" id="selectedBedsList">اضغط على السراير في الأعلى لاختيارها أولاً.</div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="userName">اسم الحاجز بالكامل (ثلاثي على الأقل):</label>
-          <input type="text" id="userName" placeholder="مثال: محمد أحمد محمود" autocomplete="name">
+    <!-- Modals -->
+    <div class="modal-overlay" id="adminLoginModal">
+        <div class="modal-content">
+            <h3 style="color:var(--primary-gold); margin-bottom:15px;">تسجيل الدخول للإدارة</h3>
+            <div class="form-group" style="text-align:right;">
+                <input type="text" id="adminUsername" placeholder="اسم المستخدم" style="margin-bottom:10px;">
+                <input type="password" id="adminPassword" placeholder="كلمة السر">
+            </div>
+            <button type="button" class="submit-btn" onclick="processAdminLogin()">دخول</button>
+            <button type="button" onclick="closeAdminModal()" style="background:transparent; border:none; color:var(--text-muted); margin-top:10px; cursor:pointer;">إلغاء</button>
         </div>
-        <div class="form-group">
-          <label for="userPhone">رقم الهاتف (010/011/012/015):</label>
-          <input type="tel" id="userPhone" placeholder="01xxxxxxxxx" maxlength="11" inputmode="numeric" autocomplete="tel">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="userAge">السن:</label>
-          <input type="number" id="userAge" placeholder="مثال: 20" min="15" max="40" inputmode="numeric">
-        </div>
-        <div class="form-group">
-          <label for="userCollege">الكلية / الفرقة:</label>
-          <input type="text" id="userCollege" placeholder="مثال: هندسة - الفرقة الثانية">
-        </div>
-      </div>
-      <button type="submit" class="submit-btn" id="submitBtn" disabled>اختر سرير أولاً</button>
-    </form>
-  </div>
-</div>
-
-<div class="modal-overlay" id="adminLoginModal">
-  <div class="modal-content">
-    <h3 style="color:var(--primary-gold);margin-bottom:15px">تسجيل الدخول للإدارة</h3>
-    <div class="form-group" style="text-align:right">
-      <input type="text" id="adminUsername" placeholder="اسم المستخدم" style="margin-bottom:10px" autocomplete="username">
-      <input type="password" id="adminPassword" placeholder="كلمة السر" autocomplete="current-password">
     </div>
-    <button type="button" class="submit-btn" onclick="processAdminLogin()">دخول</button>
-    <button type="button" onclick="closeAdminModal()" style="background:transparent;border:none;color:var(--text-muted);margin-top:10px;cursor:pointer">إلغاء</button>
-  </div>
-</div>
 
-<div class="modal-overlay" id="adminBookingsModal">
-  <div class="modal-content admin-table-container">
-    <h3 style="color:var(--primary-gold);margin-bottom:5px">📋 كشف الحجوزات المسجلة</h3>
-    <div id="bookingsTableDiv">جاري التحميل...</div>
-    <div style="display:flex;gap:10px;margin-top:20px">
-      <button type="button" onclick="exportCSV()" class="submit-btn" style="background:var(--accent-blue);color:#fff">⬇️ تصدير Excel</button>
-      <button type="button" onclick="closeBookingsModal()" class="submit-btn">إغلاق</button>
+    <div class="modal-overlay" id="adminBookingsModal">
+        <div class="modal-content admin-table-container">
+            <h3 style="color:var(--primary-gold); margin-bottom:15px;">📋 كشف الحجوزات المسجلة</h3>
+            <div id="bookingsTableDiv">لا يوجد حجوزات حالياً.</div>
+            <button type="button" onclick="closeBookingsModal()" class="submit-btn" style="margin-top:20px;">إغلاق الكشف</button>
+        </div>
     </div>
-  </div>
-</div>
 
-<div class="modal-overlay" id="whatsappModal">
-  <div class="modal-content">
-    <div style="font-size:2.5rem;margin-bottom:10px">🎉</div>
-    <h3 style="color:var(--primary-gold);margin-bottom:10px">تم حفظ وتأكيد حجزك بنجاح!</h3>
-    <p id="modalText" style="font-size:.92rem;line-height:1.9"></p>
-    <a id="whatsappGroupLink" target="_blank" rel="noopener" class="whatsapp-btn"><span>الانضمام لجروب الواتساب الآن</span></a>
-    <button type="button" onclick="closeModal()" style="background:transparent;border:none;color:var(--text-muted);margin-top:15px;cursor:pointer;text-decoration:underline">إغلاق</button>
-  </div>
-</div>
+    <div class="modal-overlay" id="adminComplaintsModal">
+        <div class="modal-content admin-table-container">
+            <h3 style="color:var(--primary-gold); margin-bottom:15px;">💬 الشكاوى والاقتراحات الواردة</h3>
+            <div id="complaintsTableDiv">لا توجد شكاوى حالياً.</div>
+            <button type="button" onclick="closeComplaintsModal()" class="submit-btn" style="margin-top:20px;">إغلاق الكشف</button>
+        </div>
+    </div>
 
-<script>
-/* ============================================================
-   ⚙️ الإعدادات — عدّل هنا فقط
-   ============================================================ */
-const CONFIG = {
-  // (اختياري لكن مُفضّل) الصق apiKey من Firebase → Project settings → Your apps
-  // لو حطيته: تسجيل دخول الإدارة بيبقى آمن (إيميل + باسورد من Firebase Authentication)
-  apiKey: "",
-  authDomain: "kasr-al-amirat.firebaseapp.com",
-  databaseURL: "https://kasr-al-amirat-default-rtdb.firebaseio.com/",
-  projectId: "kasr-al-amirat"
-};
-// بيانات دخول الإدارة في حالة عدم وجود apiKey (غيّرها!)
-const FALLBACK_ADMIN = { user: "admin", pass: "ChangeMe123" };
-const WHATSAPP_LINK = "https://chat.whatsapp.com/HjdUICJWkjW81cURsvHAXd?s=cl&p=a&mlu=4&ilr=4";
-/* ============================================================ */
+    <div class="modal-overlay" id="whatsappModal">
+        <div class="modal-content">
+            <div style="font-size:2.5rem; margin-bottom:10px;">🎉</div>
+            <h3 style="color:var(--primary-gold); margin-bottom:10px;">تم حفظ وتأكيد حجزك بنجاح!</h3>
+            <p id="modalText" style="font-size:0.9rem; line-height:1.6; color:var(--text-light);"></p>
+            
+            <a id="whatsappGroupLink" href="https://chat.whatsapp.com/HjdUICJWkjW81cURsvHAXd?s=cl&p=a&mlu=4&ilr=4" target="_blank" class="whatsapp-btn">
+                <span>الانضمام لجروب الواتساب الآن</span>
+            </a>
+            <button type="button" onclick="closeModal()" style="background:transparent; border:none; color:var(--text-muted); margin-top:15px; cursor:pointer; text-decoration:underline;">إغلاق</button>
+        </div>
+    </div>
 
-const USE_AUTH = !!CONFIG.apiKey;
-firebase.initializeApp(CONFIG);
-const db = firebase.database();
+    <script>
+        // Firebase Config
+        const firebaseConfig = { databaseURL: "https://kasr-al-amirat-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-const $ = id => document.getElementById(id);
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nat = (a, b) => a.localeCompare(b, undefined, {numeric: true});
-const toEn = s => String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+        let selectedBeds = [];
+        let isAdmin = false;
+        let buildingData = {};
+        let toastTimeout = null;
 
-let buildingData = {};
-let selectedBeds = [];      // "aptId|roomId|bedId"
-let isAdmin = false;
-let bookingsCache = {};
-let toastTimeout = null;
-let submitting = false;
+        // عرض إشعار نازل من الأعلى
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            if (toastTimeout) clearTimeout(toastTimeout);
 
-/* ---------- Toast ---------- */
-function showToast(msg, type = 'success') {
-  const t = $('toastNotification');
-  clearTimeout(toastTimeout);
-  t.className = 'toast-notification ' + type;
-  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
-  void t.offsetWidth;
-  t.classList.add('show');
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 3800);
-}
-function showPermWarn(on) {
-  const w = $('permWarn');
-  w.style.display = on ? 'block' : 'none';
-  if (on) w.innerHTML = '⚠️ <strong>Firebase رافض الحفظ</strong> — التعديلات بتبان وبعدين بترجع لوحدها. ادخل Firebase ← Realtime Database ← Rules والصق القواعد الصحيحة واضغط Publish، وبعدها اضغط "🧪 اختبار الحفظ".';
-}
-function checkWriteAccess(manual) {
-  const first = Object.keys(buildingData)[0];
-  if (!first) { if (manual) showToast('مفيش شقق لاختبار الحفظ عليها', 'error'); return; }
-  const ref = db.ref('building/' + first + '/title');
-  ref.once('value').then(s => { if (s.val() == null) return; return ref.set(s.val()); })
-    .then(() => { showPermWarn(false); if (manual) showToast('الحفظ شغال تمام ✔'); })
-    .catch(e => { showPermWarn(true); if (manual) handleErr(e); });
-}
-function handleErr(e) {
-  console.error(e);
-  const denied = e && (e.code === 'PERMISSION_DENIED' || /permission/i.test(e.message || ''));
-  if (denied && isAdmin) showPermWarn(true);
-  showToast(denied ? 'Firebase رفض العملية: عدّل قواعد قاعدة البيانات (Rules) زي ما موضح' : 'حصل خطأ في الاتصال، حاول تاني', 'error');
-}
-function save(promise, okMsg) {
-  return promise.then(() => { if (okMsg) showToast(okMsg); }).catch(handleErr);
-}
+            toast.className = `toast-notification ${type}`;
+            toast.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + message;
+            toast.classList.add('show');
 
-/* ---------- Data helpers ---------- */
-function makeApt(title, floor, n) {
-  const id = i => `${Date.now()}${i}`;
-  const mk = (name, tag, count, start) => {
-    const beds = {};
-    for (let i = 0; i < count; i++) beds['b' + id(start + i)] = { label: 'سرير ' + (start + i), booked: false };
-    return { name, tag, beds };
-  };
-  return { title, floor, rooms: { r1: mk('غرفة 1', 'بلكونة', 2, 1), r2: mk('غرفة 2', 'شباك', 2, 3), r3: mk('غرفة 3', 'بلكونة داخلي', 3, 5) } };
-}
-function buildDefaultStructure() {
-  const data = {};
-  for (let i = 1; i <= 8; i++) {
-    const a = makeApt('شقة رقم ' + i, i);
-    // ids ثابتة وبسيطة للهيكل الافتراضي
-    let c = 0; Object.values(a.rooms).forEach(r => { const nb = {}; Object.values(r.beds).forEach(b => nb['b' + (++c)] = b); r.beds = nb; });
-    data['apt_' + i] = a;
-  }
-  return data;
-}
-const parseKey = k => k.split('|');
-const bedPath = k => { const [a, r, b] = parseKey(k); return `building/${a}/rooms/${r}/beds/${b}`; };
-const bedObj = k => { const [a, r, b] = parseKey(k); return (((buildingData[a] || {}).rooms || {})[r] || {}).beds ? buildingData[a].rooms[r].beds[b] : undefined; };
-function bedFullLabel(k) {
-  const [a, r, b] = parseKey(k);
-  const apt = buildingData[a], room = apt.rooms[r];
-  return `${apt.title} - ${room.name} - ${room.beds[b].label}`;
-}
-function nextBedNumber(aptId) {
-  let n = 0; Object.values((buildingData[aptId] || {}).rooms || {}).forEach(r => n += Object.keys(r.beds || {}).length);
-  return n + 1;
-}
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
 
-/* ---------- Realtime sync ---------- */
-db.ref('.info/connected').on('value', s => {
-  const el = $('syncBadge'), on = s.val() === true;
-  el.className = 'sync ' + (on ? 'on' : 'off');
-  el.textContent = on ? '● متصل — الحفظ فوري' : '● غير متصل';
-});
+        // بناء الهيكل الافتراضي للشقق
+        function buildDefaultStructure() {
+            let data = {};
+            for (let i = 1; i <= 8; i++) {
+                data[`apt_${i}`] = {
+                    title: `شقة رقم ${i}`,
+                    floor: i,
+                    rooms: {
+                        r1: { name: 'غرفة 1', tag: 'بلكونة', beds: { b1: { label: 'سرير 1', booked: false }, b2: { label: 'سرير 2', booked: false } } },
+                        r2: { name: 'غرفة 2', tag: 'شباك', beds: { b3: { label: 'سرير 3', booked: false }, b4: { label: 'سرير 4', booked: false } } },
+                        r3: { name: 'غرفة 3', tag: 'بلكونة داخلي', beds: { b5: { label: 'سرير 5', booked: false }, b6: { label: 'سرير 6', booked: false }, b7: { label: 'سرير 7', booked: false } } }
+                    }
+                };
+            }
+            return data;
+        }
 
-db.ref('building').on('value', snap => {
-  buildingData = snap.val() || {};
-  if (!snap.exists()) {
-    // تجهيز الهيكل الافتراضي أول مرة فقط
-    db.ref('building').transaction(cur => cur === null ? buildDefaultStructure() : undefined).catch(() => {});
-  }
-  selectedBeds = selectedBeds.filter(k => { const b = bedObj(k); return b && !b.booked; });
-  render();
-  updateSelectedUI();
-}, err => {
-  console.error(err);
-  $('apartmentsGrid').innerHTML = '<div class="empty">تعذر تحميل البيانات ❌<br>تأكد من اتصال الإنترنت ومن قواعد Firebase (Rules).</div>';
-});
+        // المزامنة الحية المباشرة مع قاعدة البيانات
+        db.ref('building').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data || Object.keys(data).length === 0) {
+                buildingData = buildDefaultStructure();
+                db.ref('building').set(buildingData);
+            } else {
+                buildingData = data;
+            }
+            renderBuilding();
+        });
 
-/* ---------- Render ---------- */
-function render() {
-  const grid = $('apartmentsGrid');
-  const apts = Object.entries(buildingData).sort((x, y) => ((x[1].floor || 0) - (y[1].floor || 0)) || nat(x[0], y[0]));
-  if (!apts.length) {
-    grid.innerHTML = '<div class="empty">لا توجد شقق حالياً.' + (isAdmin ? '<br>اضغط "➕ إضافة شقة" أو "🔄 إعادة التجميع".' : '') + '</div>';
-    return;
-  }
-  grid.innerHTML = apts.map(([aid, apt]) => {
-    let total = 0, free = 0;
-    const rooms = Object.entries(apt.rooms || {}).sort((a, b) => nat(a[0], b[0]));
-    const roomsHtml = rooms.map(([rid, room]) => {
-      const beds = Object.entries(room.beds || {}).sort((a, b) => nat(a[0], b[0]));
-      const bedsHtml = beds.map(([bid, bed]) => {
-        total++; if (!bed.booked) free++;
-        const key = `${aid}|${rid}|${bid}`;
-        const cls = 'bed-btn' + (bed.booked ? ' booked' : '') + (selectedBeds.includes(key) ? ' selected' : '');
-        const ctl = isAdmin ? `<button type="button" class="bed-edit-btn" data-act="edit-bed" data-key="${key}">✎</button><button type="button" class="bed-del-btn" data-act="del-bed" data-key="${key}">✕</button>` : '';
-        return `<div class="${cls}" role="button" tabindex="0" data-key="${key}"><span class="bed-label">${esc(bed.label)}</span>${bed.booked ? '<small>محجوز</small>' : ''}${ctl}</div>`;
-      }).join('');
-      const rctl = isAdmin ? `<span class="mini-actions"><button type="button" class="mini" data-act="add-bed" data-apt="${aid}" data-room="${rid}">➕ سرير</button><button type="button" class="mini" data-act="edit-room" data-apt="${aid}" data-room="${rid}">✎</button><button type="button" class="mini danger" data-act="del-room" data-apt="${aid}" data-room="${rid}">🗑</button></span>` : '';
-      return `<div class="room-section"><div class="room-title"><span>${esc(room.name)}${room.tag ? `<span class="room-tag">${esc(room.tag)}</span>` : ''}</span>${rctl}</div><div class="beds-container">${bedsHtml || '<span style="color:var(--text-muted);font-size:.85rem">لا توجد سراير</span>'}</div></div>`;
-    }).join('');
-    const actl = isAdmin ? `<div class="mini-actions"><button type="button" class="mini" data-act="add-room" data-apt="${aid}">➕ غرفة</button><button type="button" class="mini" data-act="edit-apt" data-apt="${aid}">✎ تعديل</button><button type="button" class="mini danger" data-act="del-apt" data-apt="${aid}">🗑 حذف</button></div>` : '';
-    return `<div class="apartment-card"><div class="apartment-header"><span class="apartment-title">${esc(apt.title)}</span><div class="badges"><span class="floor-badge">الدور ${esc(apt.floor)}</span><span class="free-badge ${free ? '' : 'none'}">${free ? `متاح ${free} من ${total}` : 'مكتملة'}</span></div>${actl}</div>${roomsHtml}</div>`;
-  }).join('');
-}
+        // حفظ مباشر مع زر تأكيد إضافي
+        function saveAdminChanges() {
+            db.ref('building').set(buildingData).then(() => {
+                showToast("تم حفظ جميع التغييرات ونشرها بنجاح!", "success");
+            }).catch(err => {
+                showToast("حدث خطأ في الاتصال أثناء الحفظ!", "error");
+            });
+        }
 
-function updateSelectedUI() {
-  const list = $('selectedBedsList'), btn = $('submitBtn');
-  if (!selectedBeds.length) {
-    list.textContent = 'اضغط على السراير في الأعلى لاختيارها أولاً.';
-    btn.disabled = true; btn.textContent = 'اختر سرير أولاً';
-  } else {
-    list.innerHTML = selectedBeds.map(k => '✔ ' + esc(bedFullLabel(k))).join('<br>');
-    btn.disabled = submitting; btn.textContent = `تأكيد حجز ${selectedBeds.length} ${selectedBeds.length === 1 ? 'سرير' : 'سراير'}`;
-  }
-}
+        function resetAllApartmentsForce() {
+            if (confirm("هل تريد إعادة المبنى للهيكل الافتراضي الحقيقي؟")) {
+                buildingData = buildDefaultStructure();
+                db.ref('building').set(buildingData).then(() => {
+                    showToast("تم إعادة تجميع المبنى بنجاح!", "success");
+                });
+            }
+        }
 
-/* ---------- Click handling (event delegation) ---------- */
-function onBedClick(el) {
-  const key = el.dataset.key, bed = bedObj(key);
-  if (!bed) return;
-  if (isAdmin) {
-    save(db.ref(bedPath(key)).update({ booked: !bed.booked, bookingId: null }), bed.booked ? 'تم فتح السرير' : 'تم قفل السرير');
-    return;
-  }
-  if (bed.booked) { showToast('السرير ده محجوز بالفعل', 'error'); return; }
-  const i = selectedBeds.indexOf(key);
-  if (i >= 0) selectedBeds.splice(i, 1); else selectedBeds.push(key);
-  el.classList.toggle('selected', i < 0);
-  updateSelectedUI();
-}
-$('apartmentsGrid').addEventListener('click', e => {
-  const act = e.target.closest('[data-act]');
-  if (act) { e.stopPropagation(); adminAction(act.dataset); return; }
-  const bed = e.target.closest('.bed-btn');
-  if (bed) onBedClick(bed);
-});
-$('apartmentsGrid').addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('bed-btn')) { e.preventDefault(); onBedClick(e.target); }
-});
+        // عرض الشقق والغرف والسراير
+        function renderBuilding() {
+            const grid = document.getElementById('apartmentsGrid');
+            grid.innerHTML = '';
 
-/* ---------- Admin actions (كل تعديل بيتحفظ فوراً) ---------- */
-function adminAction(d) {
-  if (!isAdmin) return;
-  const apt = buildingData[d.apt];
-  switch (d.act) {
-    case 'edit-apt': {
-      const title = prompt('اسم الشقة:', apt.title); if (title === null || !title.trim()) return;
-      const floor = prompt('رقم الدور:', apt.floor); if (floor === null) return;
-      save(db.ref('building/' + d.apt).update({ title: title.trim(), floor: parseInt(toEn(floor)) || 0 }), 'تم حفظ تعديل الشقة');
-      break;
-    }
-    case 'del-apt':
-      if (confirm(`حذف "${apt.title}" بكل غرفها وسراييرها؟`)) save(db.ref('building/' + d.apt).remove(), 'تم حذف الشقة');
-      break;
-    case 'add-room': {
-      const name = prompt('اسم الغرفة:', 'غرفة ' + (Object.keys(apt.rooms || {}).length + 1)); if (!name) return;
-      const tag = prompt('وصف الغرفة (بلكونة / شباك ... اختياري):', '') || '';
-      const cnt = parseInt(toEn(prompt('عدد السراير:', '2') || '0')); if (!cnt || cnt < 1) return;
-      let n = nextBedNumber(d.apt); const beds = {}, t = Date.now();
-      for (let i = 0; i < cnt; i++) beds['b' + t + i] = { label: 'سرير ' + (n++), booked: false };
-      save(db.ref(`building/${d.apt}/rooms/r${t}`).set({ name: name.trim(), tag: tag.trim(), beds }), 'تم إضافة الغرفة');
-      break;
-    }
-    case 'edit-room': {
-      const room = apt.rooms[d.room];
-      const name = prompt('اسم الغرفة:', room.name); if (name === null || !name.trim()) return;
-      const tag = prompt('وصف الغرفة:', room.tag || ''); if (tag === null) return;
-      save(db.ref(`building/${d.apt}/rooms/${d.room}`).update({ name: name.trim(), tag: tag.trim() }), 'تم حفظ تعديل الغرفة');
-      break;
-    }
-    case 'del-room':
-      if (confirm('حذف الغرفة بكل سراييرها؟')) save(db.ref(`building/${d.apt}/rooms/${d.room}`).remove(), 'تم حذف الغرفة');
-      break;
-    case 'add-bed': {
-      const label = prompt('اسم السرير:', 'سرير ' + nextBedNumber(d.apt)); if (!label || !label.trim()) return;
-      save(db.ref(`building/${d.apt}/rooms/${d.room}/beds/b${Date.now()}`).set({ label: label.trim(), booked: false }), 'تم إضافة السرير');
-      break;
-    }
-    case 'edit-bed': {
-      const bed = bedObj(d.key);
-      const label = prompt('اسم السرير:', bed.label); if (!label || !label.trim()) return;
-      save(db.ref(bedPath(d.key) + '/label').set(label.trim()), 'تم حفظ الاسم');
-      break;
-    }
-    case 'del-bed': {
-      const bed = bedObj(d.key);
-      if (confirm(bed.booked ? 'السرير ده محجوز! متأكد إنك عاوز تحذفه؟' : 'حذف السرير؟')) save(db.ref(bedPath(d.key)).remove(), 'تم حذف السرير');
-      break;
-    }
-  }
-}
-function addNewApartment() {
-  const n = Object.keys(buildingData).length + 1;
-  const title = prompt('اسم الشقة الجديدة:', 'شقة رقم ' + n); if (!title || !title.trim()) return;
-  const floor = parseInt(toEn(prompt('رقم الدور:', n) || '')) || n;
-  save(db.ref('building/apt_' + Date.now()).set(makeApt(title.trim(), floor)), 'تمت إضافة الشقة وحُفظت');
-}
-function resetAllApartmentsForce() {
-  if (!confirm('هترجّع المبنى للهيكل الافتراضي (8 شقق) وتمسح كل الحجوزات. متأكد؟')) return;
-  save(db.ref().update({ building: buildDefaultStructure(), bookings: null }), 'تمت إعادة التجميع وحُفظت');
-}
+            const sortedKeys = Object.keys(buildingData).sort((a, b) => {
+                const numA = buildingData[a].floor || parseInt(a.replace('apt_', '')) || 0;
+                const numB = buildingData[b].floor || parseInt(b.replace('apt_', '')) || 0;
+                return numA - numB;
+            });
 
-/* ---------- Booking ---------- */
-$('bookingForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  if (submitting) return;
-  const name = $('userName').value.trim().replace(/\s+/g, ' ');
-  const phone = toEn($('userPhone').value.trim());
-  const age = parseInt(toEn($('userAge').value));
-  const college = $('userCollege').value.trim();
+            if (sortedKeys.length === 0) {
+                grid.innerHTML = "<p style='text-align:center; padding:20px; color:var(--primary-gold);'>لا توجد شقق حالياً. اضغط على زر إضافة شقة من وضع الإدارة.</p>";
+                return;
+            }
 
-  if (!selectedBeds.length) return showToast('اختر سرير واحد على الأقل', 'error');
-  if (name.split(' ').length < 3) return showToast('اكتب الاسم ثلاثي على الأقل', 'error');
-  if (!/^01[0125]\d{8}$/.test(phone)) return showToast('رقم الهاتف غير صحيح (010/011/012/015)', 'error');
-  if (!age || age < 15 || age > 40) return showToast('السن لازم يكون بين 15 و 40', 'error');
-  if (college.length < 2) return showToast('اكتب الكلية / الفرقة', 'error');
+            sortedKeys.forEach(aptKey => {
+                const apt = buildingData[aptKey];
+                const card = document.createElement('div');
+                card.className = 'apartment-card';
 
-  submitting = true; updateSelectedUI();
-  $('submitBtn').disabled = true; $('submitBtn').textContent = 'جاري تأكيد الحجز...';
-  try {
-    // فحص أخير على أحدث بيانات قبل الحجز
-    const fresh = (await db.ref('building').once('value')).val() || {};
-    const freshBed = k => { const [a, r, b] = parseKey(k); try { return fresh[a].rooms[r].beds[b]; } catch (_) { return undefined; } };
-    const bad = selectedBeds.filter(k => { const b = freshBed(k); return !b || b.booked; });
-    if (bad.length) {
-      selectedBeds = selectedBeds.filter(k => !bad.includes(k));
-      throw { taken: true };
-    }
-    const labels = selectedBeds.map(bedFullLabel);
-    const bookingId = db.ref('bookings').push().key;
-    const updates = {};
-    selectedBeds.forEach(k => { const p = bedPath(k); updates[p + '/booked'] = true; updates[p + '/bookingId'] = bookingId; });
-    updates['bookings/' + bookingId] = { name, phone, age, college, beds: selectedBeds.map((k, i) => ({ key: k, label: labels[i] })), ts: firebase.database.ServerValue.TIMESTAMP };
-    await db.ref().update(updates); // عملية واحدة: يا كلها يا مفيش
+                let roomsHTML = '';
+                if (apt.rooms) {
+                    for (let rKey in apt.rooms) {
+                        const room = apt.rooms[rKey];
+                        let bedsHTML = '';
 
-    $('modalText').innerHTML = `شكراً <strong>${esc(name)}</strong><br>تم حجز:<br>${labels.map(esc).join('<br>')}<br><br>انضم لجروب الواتساب لتصلك كل التفاصيل.`;
-    $('whatsappGroupLink').href = WHATSAPP_LINK;
-    $('whatsappModal').classList.add('active');
-    selectedBeds = [];
-    $('bookingForm').reset();
-  } catch (err) {
-    console.error(err);
-    if (err && (err.taken || err.code === 'PERMISSION_DENIED')) {
-      showToast('للأسف حد حجز سرير من اللي اخترتهم قبلك، اختار تاني', 'error');
-      selectedBeds = selectedBeds.filter(k => { const b = bedObj(k); return b && !b.booked; });
-    } else handleErr(err);
-  } finally {
-    submitting = false; render(); updateSelectedUI();
-  }
-});
+                        if (room.beds) {
+                            for (let bKey in room.beds) {
+                                const bed = room.beds[bKey];
+                                const bedId = `${aptKey}_${rKey}_${bKey}`;
+                                const isSelected = selectedBeds.includes(bedId);
+                                let statusClass = bed.booked ? 'booked' : (isSelected ? 'selected' : '');
+                                
+                                bedsHTML += `
+                                    <div style="position:relative; flex:1; min-width:95px;">
+                                        <button type="button" class="bed-btn ${statusClass}" 
+                                            onclick="handleBedClick('${aptKey}', '${rKey}', '${bKey}')">
+                                            🛏️ ${bed.label} ${bed.booked ? '(محجوز)' : (isSelected ? '✓ محدد' : '')}
+                                        </button>
+                                        ${isAdmin ? `<button class="bed-del-btn" onclick="deleteBed('${aptKey}', '${rKey}', '${bKey}')" title="حذف السرير">✕</button>` : ''}
+                                    </div>
+                                `;
+                            }
+                        }
 
-/* ---------- Admin login ---------- */
-function setAdmin(v) {
-  isAdmin = v;
-  document.body.classList.toggle('is-admin', v);
-  $('adminBar').style.display = v ? 'flex' : 'none';
-  $('adminNavBtn').style.display = v ? 'none' : '';
-  render();
-  if (v) setTimeout(() => checkWriteAccess(false), 1000);
-}
-function openAdminModal() {
-  $('adminUsername').placeholder = USE_AUTH ? 'البريد الإلكتروني' : 'اسم المستخدم';
-  $('adminLoginModal').classList.add('active');
-}
-function closeAdminModal() { $('adminLoginModal').classList.remove('active'); $('adminPassword').value = ''; }
-async function processAdminLogin() {
-  const u = $('adminUsername').value.trim(), p = $('adminPassword').value;
-  if (USE_AUTH) {
-    try { await firebase.auth().signInWithEmailAndPassword(u, p); closeAdminModal(); showToast('أهلاً بيك في لوحة الإدارة'); }
-    catch (e) { showToast('بيانات الدخول غير صحيحة', 'error'); }
-  } else if (u === FALLBACK_ADMIN.user && p === FALLBACK_ADMIN.pass) {
-    sessionStorage.setItem('kaAdmin', '1'); setAdmin(true); closeAdminModal(); showToast('أهلاً بيك في لوحة الإدارة');
-  } else showToast('بيانات الدخول غير صحيحة', 'error');
-}
-function logoutAdmin() {
-  if (USE_AUTH) firebase.auth().signOut(); else { sessionStorage.removeItem('kaAdmin'); setAdmin(false); }
-}
-if (USE_AUTH) firebase.auth().onAuthStateChanged(u => setAdmin(!!u));
-else if (sessionStorage.getItem('kaAdmin') === '1') setAdmin(true);
-$('adminPassword').addEventListener('keydown', e => { if (e.key === 'Enter') processAdminLogin(); });
+                        roomsHTML += `
+                            <div class="room-section">
+                                <div class="room-title">
+                                    <span>${room.name} <span class="room-tag">${room.tag || ''}</span></span>
+                                    ${isAdmin ? `
+                                        <div>
+                                            <button class="admin-btn" style="font-size:0.7rem; padding:2px 6px;" onclick="addBed('${aptKey}', '${rKey}')">➕ سرير</button>
+                                            <button class="admin-btn admin-btn-red" style="font-size:0.7rem; padding:2px 6px;" onclick="deleteRoom('${aptKey}', '${rKey}')">🗑️ الغرفة</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="beds-container">${bedsHTML}</div>
+                            </div>
+                        `;
+                    }
+                }
 
-/* ---------- Bookings table ---------- */
-function openBookingsTable() {
-  $('adminBookingsModal').classList.add('active');
-  $('bookingsTableDiv').textContent = 'جاري التحميل...';
-  db.ref('bookings').once('value').then(s => { bookingsCache = s.val() || {}; renderBookings(); }).catch(handleErr);
-}
-function closeBookingsModal() { $('adminBookingsModal').classList.remove('active'); }
-function renderBookings() {
-  const rows = Object.entries(bookingsCache).sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
-  if (!rows.length) { $('bookingsTableDiv').textContent = 'لا يوجد حجوزات حالياً.'; return; }
-  $('bookingsTableDiv').innerHTML = `<div style="color:var(--text-muted);font-size:.85rem;margin-top:6px">إجمالي الحجوزات: ${rows.length}</div><div class="table-wrap"><table><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>السن</th><th>الكلية</th><th>السراير</th><th>الوقت</th><th></th></tr>` +
-    rows.map(([id, b], i) => `<tr><td>${i + 1}</td><td>${esc(b.name)}</td><td><a href="https://wa.me/20${esc(String(b.phone).slice(1))}" target="_blank" rel="noopener">${esc(b.phone)}</a></td><td>${esc(b.age)}</td><td>${esc(b.college)}</td><td>${(b.beds || []).map(x => esc(x.label)).join('<br>')}</td><td>${b.ts ? new Date(b.ts).toLocaleString('ar-EG') : ''}</td><td><button type="button" class="mini danger" onclick="cancelBooking('${id}')">إلغاء</button></td></tr>`).join('') + '</table></div>';
-}
-function cancelBooking(id) {
-  const b = bookingsCache[id]; if (!b) return;
-  if (!confirm(`إلغاء حجز ${b.name} وإرجاع سراييره متاحة؟`)) return;
-  const u = { ['bookings/' + id]: null };
-  (b.beds || []).forEach(x => { if (bedObj(x.key)) { u[bedPath(x.key) + '/booked'] = false; u[bedPath(x.key) + '/bookingId'] = null; } });
-  save(db.ref().update(u), 'تم إلغاء الحجز').then(() => { delete bookingsCache[id]; renderBookings(); });
-}
-function exportCSV() {
-  const rows = Object.values(bookingsCache).sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  if (!rows.length) return showToast('مفيش حجوزات للتصدير', 'error');
-  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '\ufeff' + [['الاسم', 'الهاتف', 'السن', 'الكلية', 'السراير', 'الوقت'].map(q).join(',')]
-    .concat(rows.map(b => [b.name, b.phone, b.age, b.college, (b.beds || []).map(x => x.label).join(' | '), b.ts ? new Date(b.ts).toLocaleString('ar-EG') : ''].map(q).join(','))).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'bookings.csv'; document.body.appendChild(a); a.click(); a.remove();
-}
+                card.innerHTML = `
+                    <div class="apartment-header">
+                        <span class="apartment-title">${apt.title}</span>
+                        <div>
+                            <span class="floor-badge">الدور ${apt.floor}</span>
+                            ${isAdmin ? `
+                                <button class="admin-btn" style="font-size:0.75rem; margin-right:5px;" onclick="addRoom('${aptKey}')">➕ غرفة</button>
+                                <button class="admin-btn admin-btn-red" style="font-size:0.75rem;" onclick="deleteApartment('${aptKey}')">🗑️ الشقة</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${roomsHTML}
+                `;
+                grid.appendChild(card);
+            });
+        }
 
-/* ---------- Modals ---------- */
-function closeModal() { $('whatsappModal').classList.remove('active'); }
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
-</script>
+        // --- أدوات التعديل الفوري للأدمن ---
+
+        function addNewApartment() {
+            const name = prompt("أدخل اسم الشقة الجديدة:", `شقة رقم ${Object.keys(buildingData).length + 1}`);
+            if (!name) return;
+            const floor = prompt("أدخل رقم الدور:", Object.keys(buildingData).length + 1);
+            
+            const newKey = `apt_${Date.now()}`;
+            buildingData[newKey] = {
+                title: name,
+                floor: parseInt(floor) || 1,
+                rooms: {}
+            };
+            db.ref(`building/${newKey}`).set(buildingData[newKey]).then(() => {
+                showToast("تمت إضافة الشقة وحفظها بنجاح!", "success");
+            });
+        }
+
+        function deleteApartment(aptKey) {
+            if (confirm("هل تريد حذف هذه الشقة؟")) {
+                db.ref(`building/${aptKey}`).remove().then(() => {
+                    showToast("تم حذف الشقة بنجاح!", "error");
+                });
+            }
+        }
+
+        function addRoom(aptKey) {
+            const roomName = prompt("أدخل اسم الغرفة الجديدة:", "غرفة جديدة");
+            if (!roomName) return;
+            const roomTag = prompt("نوع/وصف الغرفة (مثال: بلكونة / شباك):", "بلكونة");
+
+            const newRoomKey = `r_${Date.now()}`;
+            const newRoom = { name: roomName, tag: roomTag || '', beds: {} };
+            db.ref(`building/${aptKey}/rooms/${newRoomKey}`).set(newRoom).then(() => {
+                showToast("تمت إضافة الغرفة بنجاح!", "success");
+            });
+        }
+
+        function deleteRoom(aptKey, rKey) {
+            if (confirm("هل تريد حذف هذه الغرفة؟")) {
+                db.ref(`building/${aptKey}/rooms/${rKey}`).remove().then(() => {
+                    showToast("تم حذف الغرفة بنجاح!", "error");
+                });
+            }
+        }
+
+        function addBed(aptKey, rKey) {
+            const bedLabel = prompt("اسم/رقم السرير:", "سرير جديد");
+            if (!bedLabel) return;
+
+            const newBedKey = `b_${Date.now()}`;
+            const newBed = { label: bedLabel, booked: false };
+            db.ref(`building/${aptKey}/rooms/${rKey}/beds/${newBedKey}`).set(newBed).then(() => {
+                showToast("تمت إضافة السرير بنجاح!", "success");
+            });
+        }
+
+        function deleteBed(aptKey, rKey, bKey) {
+            if (confirm("حذف هذا السرير؟")) {
+                db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).remove().then(() => {
+                    showToast("تم حذف السرير بنجاح!", "error");
+                });
+            }
+        }
+
+        // --- الضغط واختيار السراير ---
+
+        function handleBedClick(aptKey, rKey, bKey) {
+            const bed = buildingData[aptKey].rooms[rKey].beds[bKey];
+
+            // تحكم الأدمن في إلغاء الحجز
+            if (isAdmin && bed.booked) {
+                if (confirm(`إلغاء حجز هذا السرير؟\nالحاجز الحالي: ${bed.bookedBy || 'غير محدد'}`)) {
+                    db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
+                        booked: false, bookedBy: null, phone: null, age: null, college: null, bookingTime: null
+                    });
+                    showToast("تم إتاحة السرير وإلغاء الحجز بنجاح!", "success");
+                }
+                return;
+            }
+
+            if (bed.booked) {
+                showToast("هذا السرير محجوز بالفعل!", "error");
+                return;
+            }
+
+            const bedId = `${aptKey}_${rKey}_${bKey}`;
+            if (selectedBeds.includes(bedId)) {
+                selectedBeds = selectedBeds.filter(id => id !== bedId);
+            } else {
+                selectedBeds.push(bedId);
+            }
+            
+            updateSummary();
+            renderBuilding();
+        }
+
+        function updateSummary() {
+            const list = document.getElementById('selectedBedsList');
+            const btn = document.getElementById('submitBtn');
+
+            if (selectedBeds.length === 0) {
+                list.innerText = 'اضغط على السراير في الأعلى لاختيارها أولاً.';
+                btn.disabled = true;
+            } else {
+                let items = selectedBeds.map(id => {
+                    const [aptKey, rKey, bKey] = id.split('_');
+                    const apt = buildingData[aptKey];
+                    const room = apt.rooms[rKey];
+                    const bed = room.beds[bKey];
+                    return `${apt.title} (${room.name} - ${bed.label})`;
+                });
+                list.innerHTML = `<strong>السراير المحددة (${selectedBeds.length}):</strong><br>` + items.join(' | ');
+                btn.disabled = false;
+            }
+        }
+
+        // --- تقديم نموذج الحجز ---
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (selectedBeds.length === 0) return;
+
+            const name = document.getElementById('userName').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            const age = document.getElementById('userAge').value.trim();
+            const college = document.getElementById('userCollege').value.trim();
+
+            if (name.split(' ').filter(w => w.length > 0).length < 3) {
+                showToast("يرجى كتابة الاسم الثلاثي بالكامل!", "error");
+                return;
+            }
+
+            if (!/^01[0125][0-9]{8}$/.test(phone)) {
+                showToast("رقم هاتف مصري غير صحيح!", "error");
+                return;
+            }
+
+            const now = new Date();
+            const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const fullTimeStamp = `${days[now.getDay()]} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} - ${now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
+
+            selectedBeds.forEach(id => {
+                const [aptKey, rKey, bKey] = id.split('_');
+                db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
+                    booked: true,
+                    bookedBy: name,
+                    phone: phone,
+                    age: age,
+                    college: college,
+                    bookingTime: fullTimeStamp
+                });
+            });
+
+            document.getElementById('modalText').innerHTML = `
+                أهلاً بك يا <strong>${name}</strong>!<br>
+                تم تأكيد وحفظ حجزك لـ <strong>(${selectedBeds.length})</strong> سرير بنجاح.<br>
+                يرجى الضغط على الزرار بالأسفل للانضمام إلى جروب الواتساب لاستكمال باقي الإجراءات.
+            `;
+            
+            document.getElementById('whatsappModal').classList.add('active');
+
+            selectedBeds = [];
+            document.getElementById('bookingForm').reset();
+            updateSummary();
+        });
+
+        // --- إرسال الشكاوى والاقتراحات ---
+
+        document.getElementById('complaintForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const cName = document.getElementById('cName').value.trim() || 'فاعل خير';
+            const cPhone = document.getElementById('cPhone').value.trim() || 'غير مدخل';
+            const cMessage = document.getElementById('cMessage').value.trim();
+
+            if (!cMessage) return;
+
+            const now = new Date();
+            const fullTimeStamp = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} - ${now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
+
+            db.ref('complaints').push({
+                name: cName,
+                phone: cPhone,
+                message: cMessage,
+                time: fullTimeStamp
+            }).then(() => {
+                showToast("تم إرسال شكواك / اقتراحك للإدارة بنجاح!", "success");
+                document.getElementById('complaintForm').reset();
+            }).catch(() => {
+                showToast("حدث خطأ أثناء الإرسال، حاول مجدداً!", "error");
+            });
+        });
+
+        function closeModal() { document.getElementById('whatsappModal').classList.remove('active'); }
+
+        // --- إدارة الدخول والكشوفات ---
+
+        function openAdminModal() {
+            if (isAdmin) { showToast("أنت بالفعل في وضع الإدارة.", "success"); return; }
+            document.getElementById('adminLoginModal').classList.add('active');
+        }
+        function closeAdminModal() { document.getElementById('adminLoginModal').classList.remove('active'); }
+
+        function processAdminLogin() {
+            const user = document.getElementById('adminUsername').value.trim();
+            const pass = document.getElementById('adminPassword').value.trim();
+
+            if (user === "man3am" && pass === "5515879462") {
+                isAdmin = true;
+                document.getElementById('adminBar').style.display = 'flex';
+                closeAdminModal();
+                showToast("تم تسجيل الدخول للإدارة بنجاح!", "success");
+                renderBuilding();
+            } else {
+                showToast("بيانات الدخول غير صحيحة!", "error");
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            document.getElementById('adminBar').style.display = 'none';
+            showToast("تم الخروج من وضع الإدارة", "error");
+            renderBuilding();
+        }
+
+        function openBookingsTable() {
+            const container = document.getElementById('bookingsTableDiv');
+            let bookings = [];
+
+            for (let aptKey in buildingData) {
+                const apt = buildingData[aptKey];
+                if (apt.rooms) {
+                    for (let rKey in apt.rooms) {
+                        const room = apt.rooms[rKey];
+                        if (room.beds) {
+                            for (let bKey in room.beds) {
+                                const bed = room.beds[bKey];
+                                if (bed.booked) {
+                                    bookings.push({
+                                        apt: apt.title, room: room.name, bed: bed.label,
+                                        name: bed.bookedBy || 'غير محدد', phone: bed.phone || 'غير محدد',
+                                        age: bed.age || '-', college: bed.college || '-', time: bed.bookingTime || '-'
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (bookings.length === 0) {
+                container.innerHTML = "<p style='text-align:center; padding:15px;'>لا توجد أي حجوزات مسجلة حالياً.</p>";
+            } else {
+                let html = `<table><thead><tr><th>المكان</th><th>الاسم</th><th>الهاتف</th><th>السن</th><th>الكلية</th><th>الوقت</th></tr></thead><tbody>`;
+                bookings.forEach(b => {
+                    html += `<tr><td>${b.apt} - ${b.room} (${b.bed})</td><td>${b.name}</td><td><a href="https://wa.me/2${b.phone}" target="_blank" style="color:var(--whatsapp-green); font-weight:bold;">${b.phone}</a></td><td>${b.age}</td><td>${b.college}</td><td style="font-size:0.75rem;">${b.time}</td></tr>`;
+                });
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            }
+            document.getElementById('adminBookingsModal').classList.add('active');
+        }
+
+        function closeBookingsModal() { document.getElementById('adminBookingsModal').classList.remove('active'); }
+
+        // فتح كشف الشكاوى والاقتراحات
+        function openComplaintsTable() {
+            const container = document.getElementById('complaintsTableDiv');
+            db.ref('complaints').once('value', snapshot => {
+                const data = snapshot.val();
+                if (!data) {
+                    container.innerHTML = "<p style='text-align:center; padding:15px;'>لا توجد أي شكاوى أو اقتراحات حالياً.</p>";
+                } else {
+                    let html = `<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>الشكوى / الاقتراح</th><th>الوقت</th><th>إجراء</th></tr></thead><tbody>`;
+                    for (let key in data) {
+                        const c = data[key];
+                        html += `<tr><td>${c.name}</td><td>${c.phone}</td><td style="text-align:right;">${c.message}</td><td style="font-size:0.75rem;">${c.time}</td><td><button class="admin-btn admin-btn-red" onclick="deleteComplaint('${key}')">مسح</button></td></tr>`;
+                    }
+                    html += `</tbody></table>`;
+                    container.innerHTML = html;
+                }
+                document.getElementById('adminComplaintsModal').classList.add('active');
+            });
+        }
+
+        function deleteComplaint(key) {
+            if (confirm("هل تريد حذف هذه الشكوى؟")) {
+                db.ref(`complaints/${key}`).remove().then(() => {
+                    showToast("تم حذف الشكوى", "success");
+                    openComplaintsTable();
+                });
+            }
+        }
+
+        function closeComplaintsModal() { document.getElementById('adminComplaintsModal').classList.remove('active'); }
+    </script>
 </body>
 </html>
