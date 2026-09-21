@@ -29,7 +29,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-dark); color: var(--text-light); padding-bottom: 60px; overflow-x: hidden; }
 
-        /* Toast Notification بارز ونازل من الأسطح */
+        /* Toast Notification نازل من فوق */
         .toast-notification {
             position: fixed; top: -120px; left: 50%; transform: translateX(-50%);
             padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 1.05rem; color: #fff;
@@ -91,7 +91,7 @@
             100% { opacity: 0.6; }
         }
 
-        /* Legend */
+        /* Instructions & Legend */
         .instructions {
             background: var(--card-bg); padding: 15px 20px; border-radius: 12px;
             border-right: 4px solid var(--primary-gold); margin-bottom: 30px;
@@ -141,7 +141,7 @@
             flex: 1; min-width: 100px; padding: 12px 8px; background: #2a2e3d;
             border: 2px solid var(--border-color); border-radius: 10px; color: var(--text-light);
             cursor: pointer; text-align: center; font-size: 0.9rem; transition: all 0.2s ease;
-            position: relative; user-select: none;
+            position: relative; user-select: none; outline: none;
         }
 
         /* Active & Selected Bed State */
@@ -153,7 +153,7 @@
             box-shadow: 0 0 12px rgba(46, 204, 113, 0.6);
             transform: scale(1.02);
         }
-        .bed-btn.booked { background: var(--accent-red) !important; color: #fff !important; opacity: 0.85; text-decoration: line-through; border-color: var(--accent-red); }
+        .bed-btn.booked { background: var(--accent-red) !important; color: #fff !important; opacity: 0.85; text-decoration: line-through; border-color: var(--accent-red); cursor: not-allowed; }
 
         .bed-del-btn {
             position: absolute; top: -8px; right: -8px; background: var(--accent-red);
@@ -220,7 +220,7 @@
 </head>
 <body>
 
-    <!-- Toast Notification (شريط الإشعارات من الأعلى) -->
+    <!-- Notification Toast -->
     <div id="toastNotification" class="toast-notification"></div>
 
     <header>
@@ -339,7 +339,7 @@
         let hasUnsavedAdminChanges = false;
         let toastTimeout = null;
 
-        // دالة إنزال إشعار الحفظ والتنبيهات من الأعلى
+        // دالة عرض الإشعارات المنزلقة من الأعلى
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
             if (toastTimeout) clearTimeout(toastTimeout);
@@ -358,7 +358,7 @@
             document.getElementById('unsavedBadge').style.display = state ? 'inline-block' : 'none';
         }
 
-        // Generate Standard Structure
+        // إنشاء الهيكل القياسي للمبنى
         function buildDefaultStructure() {
             let data = {};
             for (let i = 1; i <= 8; i++) {
@@ -375,9 +375,9 @@
             return data;
         }
 
-        // Realtime DB Sync
+        // المزامنة مع قاعدة البيانات الحية
         db.ref('building').on('value', (snapshot) => {
-            if (hasUnsavedAdminChanges) return; // منع المسح إذا كان للأدمن تعديلات لم تحفظ بعد
+            if (hasUnsavedAdminChanges) return; // الحفاظ على تعديلات الأدمن قيد التحرير
             const data = snapshot.val();
             if (!data || Object.keys(data).length === 0) {
                 buildingData = buildDefaultStructure();
@@ -388,7 +388,7 @@
             renderBuilding();
         });
 
-        // 💾 دالة زرار الحفظ الفعلي مع إشعار نزول من الأعلى
+        // 💾 زرار الحفظ الفعلي والنهائي في السيرفر
         function saveAdminChanges() {
             db.ref('building').set(buildingData).then(() => {
                 setUnsavedState(false);
@@ -399,7 +399,7 @@
         }
 
         function resetAllApartmentsForce() {
-            if (confirm("هل تريد إعادة التجميع والمبنى للشكل الافتراضي؟ (يتطلب حفظ التغييرات بعد ذلك)")) {
+            if (confirm("هل تريد إعادة المبنى للهيكل الافتراضي؟ (تتطلب حفظ التغييرات بعد ذلك)")) {
                 buildingData = buildDefaultStructure();
                 setUnsavedState(true);
                 renderBuilding();
@@ -407,7 +407,7 @@
             }
         }
 
-        // Render Interface
+        // عرض واجهة الشقق والغرف والسراير
         function renderBuilding() {
             const grid = document.getElementById('apartmentsGrid');
             grid.innerHTML = '';
@@ -444,8 +444,7 @@
                                 bedsHTML += `
                                     <div style="position:relative; flex:1; min-width:95px;">
                                         <button type="button" class="bed-btn ${statusClass}" 
-                                            onclick="handleBedClick('${aptKey}', '${rKey}', '${bKey}')"
-                                            ${bed.booked && !isAdmin ? 'disabled' : ''}>
+                                            onclick="handleBedClick('${aptKey}', '${rKey}', '${bKey}')">
                                             🛏️ ${bed.label} ${bed.booked ? '(محجوز)' : (isSelected ? '✓ محدد' : '')}
                                         </button>
                                         ${isAdmin ? `<button class="bed-del-btn" onclick="deleteBed('${aptKey}', '${rKey}', '${bKey}')" title="حذف السرير">✕</button>` : ''}
@@ -488,7 +487,7 @@
             });
         }
 
-        // --- BATCH ADMIN ACTIONS ---
+        // --- أدوات التحكم والتعديل الخاصة بالأدمن ---
 
         function addNewApartment() {
             const name = prompt("أدخل اسم الشقة الجديدة:", `شقة رقم ${Object.keys(buildingData).length + 1}`);
@@ -565,24 +564,29 @@
             }
         }
 
-        // --- SELECTION & BED CLICK ---
+        // --- الضغط وتحديد السراير (إصلاح شامل وفعال) ---
 
         function handleBedClick(aptKey, rKey, bKey) {
             const bed = buildingData[aptKey].rooms[rKey].beds[bKey];
 
-            // إلغاء الحجز بواسطة الأدمن فوراً
+            // إتاحة إلغاء الحجز من قبل الأدمن
             if (isAdmin && bed.booked) {
-                if (confirm(`إلغاء حجز هذا السرير؟\nالحاجز: ${bed.bookedBy || 'غير محدد'}`)) {
+                if (confirm(`إلغاء حجز هذا السرير؟\nالحاجز الحالي: ${bed.bookedBy || 'غير محدد'}`)) {
                     db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
                         booked: false, bookedBy: null, phone: null, age: null, college: null, bookingTime: null
                     });
-                    showToast("تم إتاحة السرير وإلغاء الحجز بنجاح!", "success");
+                    showToast("تم إتاحة السرير بنجاح!", "success");
                 }
                 return;
             }
 
-            if (bed.booked) return;
+            // منع اختيار السرير المحجوز للمستخدم العادي
+            if (bed.booked) {
+                showToast("عفواً، هذا السرير محجوز بالفعل!", "error");
+                return;
+            }
 
+            // إضافة وتظليل السرير المحدد
             const bedId = `${aptKey}_${rKey}_${bKey}`;
             if (selectedBeds.includes(bedId)) {
                 selectedBeds = selectedBeds.filter(id => id !== bedId);
@@ -614,7 +618,7 @@
             }
         }
 
-        // --- SUBMIT BOOKING ---
+        // --- إرسال وتأكيد الحجز المباشر ---
 
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -639,7 +643,7 @@
             const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
             const fullTimeStamp = `${days[now.getDay()]} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} - ${now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
 
-            // حفظ أوتوماتيكي في قاعدة البيانات للمستخدم
+            // حفظ أوتوماتيكي صريح لمسار الحجز
             selectedBeds.forEach(id => {
                 const [aptKey, rKey, bKey] = id.split('_');
                 db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
@@ -667,7 +671,7 @@
 
         function closeModal() { document.getElementById('whatsappModal').classList.remove('active'); }
 
-        // Admin Modals & Login
+        // تسجيل دخول وحجوزات الإدارة
         function openAdminModal() {
             if (isAdmin) { showToast("أنت بالفعل في وضع الإدارة.", "success"); return; }
             document.getElementById('adminLoginModal').classList.add('active');
