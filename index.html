@@ -41,6 +41,39 @@
             overflow-x: hidden;
         }
 
+        /* Top Notification Toast */
+        .toast-notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            z-index: 9999;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: top 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast-notification.success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border: 1px solid #27ae60;
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 1px solid #c0392b;
+        }
+
+        .toast-notification.show {
+            top: 25px;
+        }
+
         /* Header Styles */
         header {
             text-align: center;
@@ -89,7 +122,7 @@
 
         /* Container & Grid Layout */
         .container {
-            max-width: 1200px;
+            max-width: 900px; /* للرص العمودي المنظم */
             margin: 30px auto;
             padding: 0 20px;
         }
@@ -138,10 +171,10 @@
         .legend-selected { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
         .legend-booked { background-color: var(--accent-red); opacity: 0.8; }
 
-        /* Apartments Section */
-        .apartments-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        /* Apartments Vertical Column Layout */
+        .apartments-list {
+            display: flex;
+            flex-direction: column;
             gap: 25px;
         }
 
@@ -151,12 +184,11 @@
             border: 1px solid var(--border-color);
             padding: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            transition: border-color 0.3s ease;
         }
 
         .apartment-card:hover {
             border-color: var(--primary-gold);
-            transform: translateY(-5px);
         }
 
         .apartment-header {
@@ -169,7 +201,7 @@
         }
 
         .apartment-title {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             color: var(--primary-gold);
             font-weight: 700;
         }
@@ -177,37 +209,37 @@
         .floor-badge {
             background: rgba(212, 175, 55, 0.15);
             color: var(--primary-gold);
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
         /* Room & Beds Layout */
         .room-section {
             background: rgba(0,0,0,0.2);
             border-radius: 10px;
-            padding: 12px;
+            padding: 14px;
             margin-bottom: 12px;
         }
 
         .room-title {
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text-light);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
         }
 
-        .room-controls { display: none; gap: 5px; }
+        .room-controls { display: none; gap: 6px; }
         .admin-mode .room-controls { display: flex; }
 
         .room-tag {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--primary-gold);
             background: rgba(212, 175, 55, 0.1);
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 4px;
         }
 
@@ -220,15 +252,15 @@
         /* Bed Button Touch & Click Effects */
         .bed-btn {
             flex: 1;
-            min-width: 70px;
-            padding: 10px 5px;
+            min-width: 90px;
+            padding: 12px 8px;
             background: #2a2e3d;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-light);
             cursor: pointer;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
             position: relative;
@@ -249,8 +281,8 @@
             background: var(--accent-red);
             color: #fff;
             border-color: var(--accent-red);
-            opacity: 0.75;
-            cursor: not-allowed;
+            opacity: 0.8;
+            cursor: pointer;
             text-decoration: line-through;
         }
 
@@ -258,9 +290,9 @@
             background: var(--primary-gold);
             border: none;
             color: #000;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
             cursor: pointer;
             font-weight: bold;
         }
@@ -424,11 +456,13 @@
             header { padding-top: 60px; }
             .admin-nav-btn { top: 15px; left: 15px; font-size: 0.8rem; }
             header h1 { font-size: 2rem; }
-            .apartments-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Notification Toast Container -->
+    <div id="toastNotification" class="toast-notification"></div>
 
     <!-- Header Section -->
     <header>
@@ -465,8 +499,8 @@
             </div>
         </div>
 
-        <!-- Building Apartments Container -->
-        <div class="apartments-grid" id="apartmentsGrid"></div>
+        <!-- Building Apartments Container (List) -->
+        <div class="apartments-list" id="apartmentsGrid"></div>
 
         <!-- Checkout / Reservation Form -->
         <div class="booking-summary" id="bookingFormSection">
@@ -563,7 +597,19 @@
         let isAdmin = false;
         let buildingData = {};
 
-        // Default Data Setup: 8 Apartments
+        // Notification Toast Handler
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            toast.className = `toast-notification ${type}`;
+            toast.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Structure Initialization: 8 Apartments with 3 Specific Rooms Each
         function getDefaultStructure() {
             let data = {};
             for (let i = 1; i <= 8; i++) {
@@ -589,7 +635,7 @@
                         },
                         r3: { 
                             name: 'غرفة 3', 
-                            tag: 'بلكونة داخلية', 
+                            tag: 'بلكونة داخلي', 
                             beds: { 
                                 b5: { label: 'سرير 5', booked: false },  
                                 b6: { label: 'سرير 6', booked: false },  
@@ -602,7 +648,7 @@
             return data;
         }
 
-        // Realtime Data Listener
+        // Realtime Data Sync
         db.ref('building').on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) {
@@ -614,12 +660,19 @@
             renderBuilding();
         });
 
-        // Render Apartments Cards
+        // Render Apartments Cards vertically (Sorted 1 to 8)
         function renderBuilding() {
             const grid = document.getElementById('apartmentsGrid');
             grid.innerHTML = '';
 
-            for (let aptKey in buildingData) {
+            // Ensure Apartments stay sorted 1 to 8
+            const sortedKeys = Object.keys(buildingData).sort((a, b) => {
+                const numA = buildingData[a].floor || parseInt(a.replace('apt_', '')) || 0;
+                const numB = buildingData[b].floor || parseInt(b.replace('apt_', '')) || 0;
+                return numA - numB;
+            });
+
+            for (let aptKey of sortedKeys) {
                 const apt = buildingData[aptKey];
                 const card = document.createElement('div');
                 card.className = 'apartment-card';
@@ -638,7 +691,7 @@
                             <button type="button" class="bed-btn ${statusClass}" 
                                 onclick="handleBedClick(event, '${aptKey}', '${rKey}', '${bKey}')"
                                 ${bed.booked && !isAdmin ? 'disabled' : ''}>
-                                🛏️ ${bed.label} ${bed.booked ? '(تم بالحجز)' : ''}
+                                🛏️ ${bed.label} ${bed.booked ? '(محجوز)' : ''}
                             </button>
                         `;
                     }
@@ -648,8 +701,9 @@
                             <div class="room-title">
                                 <span>${room.name} <span class="room-tag">${room.tag}</span></span>
                                 <div class="room-controls">
-                                    <button class="admin-btn-sm" onclick="addBed('${aptKey}', '${rKey}')">+ سرير</button>
-                                    <button class="admin-btn-sm admin-btn-del" onclick="deleteRoom('${aptKey}', '${rKey}')">حذف غرفة</button>
+                                    <button class="admin-btn-sm" onclick="addBed('${aptKey}', '${rKey}')">+ إضافة سرير</button>
+                                    <button class="admin-btn-sm admin-btn-del" onclick="deleteBedPrompt('${aptKey}', '${rKey}')">- حذف سرير</button>
+                                    <button class="admin-btn-sm admin-btn-del" onclick="deleteRoom('${aptKey}', '${rKey}')">حذف أوضة</button>
                                 </div>
                             </div>
                             <div class="beds-container">${bedsHTML}</div>
@@ -662,24 +716,24 @@
                         <span class="apartment-title">${apt.title}</span>
                         <div>
                             <span class="floor-badge">الدور ${apt.floor}</span>
-                            ${isAdmin ? `<button class="admin-btn-sm admin-btn-del" style="margin-right:5px;" onclick="deleteApartment('${aptKey}')">حذف الشقة</button>` : ''}
+                            ${isAdmin ? `<button class="admin-btn-sm admin-btn-del" style="margin-right:8px;" onclick="deleteApartment('${aptKey}')">حذف الشقة بالكامل</button>` : ''}
                         </div>
                     </div>
                     ${roomsHTML}
-                    ${isAdmin ? `<button class="admin-btn-sm" style="width:100%; margin-top:10px;" onclick="addRoomPrompt('${aptKey}')">+ إضافة غرفة لهذه الشقة</button>` : ''}
+                    ${isAdmin ? `<button class="admin-btn-sm" style="width:100%; margin-top:10px; padding:8px;" onclick="addRoomPrompt('${aptKey}')">+ إضافة أوضة للشقة</button>` : ''}
                 `;
                 grid.appendChild(card);
             }
         }
 
-        // Bed Click Action
+        // Bed Actions
         function handleBedClick(event, aptKey, rKey, bKey) {
             createRipple(event, event.currentTarget);
             const bed = buildingData[aptKey].rooms[rKey].beds[bKey];
 
             // Admin Un-book action
             if (isAdmin && bed.booked) {
-                if (confirm(`هل تريد إلغاء حجز هذا السرير؟\nاسم الحاجز: ${bed.bookedBy || 'غير معروف'}`)) {
+                if (confirm(`هل تريد إلغاء حجز هذا السرير؟\nاسم الحاجز الحالي: ${bed.bookedBy || 'غير معروف'}`)) {
                     db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
                         booked: false,
                         bookedBy: null,
@@ -688,6 +742,7 @@
                         college: null,
                         bookingTime: null
                     });
+                    showToast("تم إلغاء الحجز وإتاحة السرير بنجاح!", "success");
                 }
                 return;
             }
@@ -742,7 +797,7 @@
             }
         }
 
-        // Submit Form
+        // Submit Booking
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             if (selectedBeds.length === 0) return;
@@ -752,7 +807,6 @@
             const age = document.getElementById('userAge').value;
             const college = document.getElementById('userCollege').value;
 
-            // Generate Precise Date and Time Stamp
             const now = new Date();
             const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
             const dayName = days[now.getDay()];
@@ -760,7 +814,6 @@
             const formattedTime = now.toLocaleTimeString('ar-EG');
             const fullTimeStamp = `${formattedDate} - الساعة ${formattedTime}`;
 
-            // Save to Cloud Database
             selectedBeds.forEach(id => {
                 const [aptKey, rKey, bKey] = id.split('_');
                 db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
@@ -785,10 +838,10 @@
             document.getElementById('whatsappModal').classList.remove('active');
         }
 
-        // --- ADMIN PANEL LOGIC ---
+        // --- ADMIN LOGIN & ACTIONS ---
         function openAdminModal() {
             if (isAdmin) {
-                alert("أنت بالفعل في وضع الإدارة حالياً.");
+                showToast("أنت بالفعل في وضع الإدارة حالياً.", "success");
                 return;
             }
             document.getElementById('adminUsername').value = '';
@@ -809,10 +862,10 @@
                 document.body.classList.add('admin-mode');
                 document.getElementById('adminBar').style.display = 'flex';
                 closeAdminModal();
-                alert("تم الدخول لوضع الإدارة بنجاح!");
+                showToast("تم الدخول لوضع الإدارة بنجاح!", "success");
                 renderBuilding();
             } else {
-                alert("اسم المستخدم أو كلمة السر غير صحيحة!");
+                showToast("اسم المستخدم أو كلمة السر غير صحيحة!", "error");
             }
         }
 
@@ -820,7 +873,77 @@
             isAdmin = false;
             document.body.classList.remove('admin-mode');
             document.getElementById('adminBar').style.display = 'none';
+            showToast("تم الخروج من وضع الإدارة", "error");
             renderBuilding();
+        }
+
+        // Admin Management Actions
+        function addApartmentPrompt() {
+            const num = prompt("أدخل رقم الشقة الجديدة:");
+            if (!num) return;
+            const aptKey = 'apt_' + Date.now();
+            db.ref(`building/${aptKey}`).set({
+                title: `شقة رقم ${num}`,
+                floor: num,
+                rooms: {
+                    r1: { name: 'غرفة 1', tag: 'شباك', beds: { b1: { label: 'سرير 1', booked: false } } }
+                }
+            });
+            showToast("تم إضافة الشقة بنجاح!");
+        }
+
+        function deleteApartment(aptKey) {
+            if (confirm("هل أنت تأكد من حذف هذه الشقة بالكامل بكافة غرفها؟")) {
+                db.ref(`building/${aptKey}`).remove();
+                showToast("تم حذف الشقة بنجاح!", "error");
+            }
+        }
+
+        function addRoomPrompt(aptKey) {
+            const roomName = prompt("اسم الغرفة الجديدة (مثال: غرفة 4):");
+            if (!roomName) return;
+            const tag = prompt("وصف الغرفة (بلكونة / شباك / بلكونة داخلي):") || "عادية";
+
+            const rKey = 'r_' + Date.now();
+            db.ref(`building/${aptKey}/rooms/${rKey}`).set({
+                name: roomName,
+                tag: tag,
+                beds: { b1: { label: 'سرير 1', booked: false } }
+            });
+            showToast("تم إضافة الغرفة بنجاح!");
+        }
+
+        function deleteRoom(aptKey, rKey) {
+            if (confirm("هل أنت تأكد من حذف هذه الغرفة بكل سرايرها؟")) {
+                db.ref(`building/${aptKey}/rooms/${rKey}`).remove();
+                showToast("تم حذف الغرفة بنجاح!", "error");
+            }
+        }
+
+        function addBed(aptKey, rKey) {
+            const bedLabel = prompt("أدخل اسم أو رقم السرير الجديد:");
+            if (!bedLabel) return;
+
+            const bKey = 'b_' + Date.now();
+            db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).set({
+                label: bedLabel,
+                booked: false
+            });
+            showToast("تم إضافة السرير بنجاح!");
+        }
+
+        function deleteBedPrompt(aptKey, rKey) {
+            const room = buildingData[aptKey].rooms[rKey];
+            const bKeys = Object.keys(room.beds);
+            if (bKeys.length === 0) {
+                showToast("لا توجد سراير لحذفها!", "error");
+                return;
+            }
+            const lastBKey = bKeys[bKeys.length - 1];
+            if (confirm(`هل تريد حذف السرير الأخير (${room.beds[lastBKey].label})؟`)) {
+                db.ref(`building/${aptKey}/rooms/${rKey}/beds/${lastBKey}`).remove();
+                showToast("تم حذف السرير بنجاح!", "error");
+            }
         }
 
         // Display Full Bookings Table Modal
@@ -862,7 +985,7 @@
                                 <th>الهاتف</th>
                                 <th>السن</th>
                                 <th>الكلية</th>
-                                <th>وقت وتاريخ الحجز</th>
+                                <th>تاريخ ووقت الحجز</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -888,56 +1011,6 @@
 
         function closeBookingsModal() {
             document.getElementById('adminBookingsModal').classList.remove('active');
-        }
-
-        // Admin Building Editing Functions
-        function addApartmentPrompt() {
-            const num = prompt("أدخل رقم الشقة الجديدة:");
-            if (!num) return;
-            const aptKey = 'apt_' + Date.now();
-            db.ref(`building/${aptKey}`).set({
-                title: `شقة رقم ${num}`,
-                floor: num,
-                rooms: {
-                    r1: { name: 'غرفة 1', tag: 'شباك', beds: { b1: { label: 'سرير 1', booked: false } } }
-                }
-            });
-        }
-
-        function deleteApartment(aptKey) {
-            if (confirm("هل أنت تأكد من حذف هذه الشقة بالكامل بكافة غرفها؟")) {
-                db.ref(`building/${aptKey}`).remove();
-            }
-        }
-
-        function addRoomPrompt(aptKey) {
-            const roomName = prompt("اسم الغرفة الجديدة (مثال: غرفة 4):");
-            if (!roomName) return;
-            const tag = prompt("وصف/نوع الغرفة (مثال: بلكونة / شباك):") || "عادية";
-
-            const rKey = 'r_' + Date.now();
-            db.ref(`building/${aptKey}/rooms/${rKey}`).set({
-                name: roomName,
-                tag: tag,
-                beds: { b1: { label: 'سرير 1', booked: false } }
-            });
-        }
-
-        function deleteRoom(aptKey, rKey) {
-            if (confirm("هل أنت تأكد من حذف هذه الغرفة بكل سرايرها؟")) {
-                db.ref(`building/${aptKey}/rooms/${rKey}`).remove();
-            }
-        }
-
-        function addBed(aptKey, rKey) {
-            const bedLabel = prompt("أدخل اسم أو رقم السرير الجديد:");
-            if (!bedLabel) return;
-
-            const bKey = 'b_' + Date.now();
-            db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).set({
-                label: bedLabel,
-                booked: false
-            });
         }
     </script>
 </body>
