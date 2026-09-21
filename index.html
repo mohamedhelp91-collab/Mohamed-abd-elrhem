@@ -29,16 +29,17 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-dark); color: var(--text-light); padding-bottom: 60px; overflow-x: hidden; }
 
-        /* Toast Notification */
+        /* Toast Notification بارز ونازل من الأسطح */
         .toast-notification {
-            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-            padding: 12px 25px; border-radius: 30px; font-weight: 700; font-size: 1rem; color: #fff;
-            z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.6); transition: top 0.4s ease;
-            display: flex; align-items: center; gap: 10px;
+            position: fixed; top: -120px; left: 50%; transform: translateX(-50%);
+            padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 1.05rem; color: #fff;
+            z-index: 99999; box-shadow: 0 8px 25px rgba(0,0,0,0.8); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
         .toast-notification.success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
         .toast-notification.error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-        .toast-notification.show { top: 20px; }
+        .toast-notification.show { top: 25px; }
 
         /* Header */
         header {
@@ -70,15 +71,24 @@
 
         .admin-btn {
             background: var(--primary-gold); border: none; color: #000;
-            padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.82rem; cursor: pointer;
+            padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer;
+            transition: transform 0.1s ease;
         }
+        .admin-btn:active { transform: scale(0.96); }
         .admin-btn-red { background: var(--accent-red); color: #fff; }
         .admin-btn-green { background: var(--accent-green); color: #fff; }
-        .admin-btn-blue { background: var(--accent-blue); color: #fff; }
+        .admin-btn-blue { background: var(--accent-blue); color: #fff; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); }
 
         .pending-badge {
             background: var(--accent-red); color: #fff; font-size: 0.75rem;
-            padding: 2px 8px; border-radius: 10px; margin-right: 5px; font-weight: bold;
+            padding: 3px 10px; border-radius: 12px; margin-right: 8px; font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
         }
 
         /* Legend */
@@ -210,6 +220,7 @@
 </head>
 <body>
 
+    <!-- Toast Notification (شريط الإشعارات من الأعلى) -->
     <div id="toastNotification" class="toast-notification"></div>
 
     <header>
@@ -326,13 +337,20 @@
         let isAdmin = false;
         let buildingData = {};
         let hasUnsavedAdminChanges = false;
+        let toastTimeout = null;
 
+        // دالة إنزال إشعار الحفظ والتنبيهات من الأعلى
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toastNotification');
+            if (toastTimeout) clearTimeout(toastTimeout);
+
             toast.className = `toast-notification ${type}`;
             toast.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + message;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
         }
 
         function setUnsavedState(state) {
@@ -359,7 +377,7 @@
 
         // Realtime DB Sync
         db.ref('building').on('value', (snapshot) => {
-            if (hasUnsavedAdminChanges) return; // عدم إعادة كتابة التعديلات قبل الحفظ
+            if (hasUnsavedAdminChanges) return; // منع المسح إذا كان للأدمن تعديلات لم تحفظ بعد
             const data = snapshot.val();
             if (!data || Object.keys(data).length === 0) {
                 buildingData = buildDefaultStructure();
@@ -370,21 +388,22 @@
             renderBuilding();
         });
 
+        // 💾 دالة زرار الحفظ الفعلي مع إشعار نزول من الأعلى
         function saveAdminChanges() {
             db.ref('building').set(buildingData).then(() => {
                 setUnsavedState(false);
-                showToast("تم حفظ التغيرات ونشرها فوراً على الموقع!", "success");
+                showToast("تم حفظ جميع التغييرات ونشرها بنجاح ولن تتغير!", "success");
             }).catch(err => {
-                showToast("حدث خطأ أثناء الحفظ!", "error");
+                showToast("حدث خطأ في الاتصال أثناء الحفظ!", "error");
             });
         }
 
         function resetAllApartmentsForce() {
-            if (confirm("هل تريد إعادة الهيكل الافتراضي؟ (يتطلب الضغط على 'حفظ التغييرات' بعدها لتأكيد النشر)")) {
+            if (confirm("هل تريد إعادة التجميع والمبنى للشكل الافتراضي؟ (يتطلب حفظ التغييرات بعد ذلك)")) {
                 buildingData = buildDefaultStructure();
                 setUnsavedState(true);
                 renderBuilding();
-                showToast("تمت إعادة التوزيع. اضغط 'حفظ التغييرات' لنشرها.", "success");
+                showToast("تمت إعادة التوزيع. اضغط 'حفظ التغييرات' للتأكيد النهائي.", "success");
             }
         }
 
@@ -469,7 +488,7 @@
             });
         }
 
-        // --- BATCH ADMIN ACTIONS (تغيير محلي يتطلب زرار حفظ) ---
+        // --- BATCH ADMIN ACTIONS ---
 
         function addNewApartment() {
             const name = prompt("أدخل اسم الشقة الجديدة:", `شقة رقم ${Object.keys(buildingData).length + 1}`);
@@ -484,7 +503,7 @@
             };
             setUnsavedState(true);
             renderBuilding();
-            showToast("تمت إضافة الشقة (اضغط 'حفظ التغييرات' لنشرها)", "success");
+            showToast("تمت إضافة الشقة محلياً. اضغط 'حفظ التغييرات' للموقع", "success");
         }
 
         function deleteApartment(aptKey) {
@@ -492,7 +511,7 @@
                 delete buildingData[aptKey];
                 setUnsavedState(true);
                 renderBuilding();
-                showToast("تم إزالة الشقة من العرض (اضغط 'حفظ التغييرات' للتأكيد)", "error");
+                showToast("تم حذف الشقة. اضغط 'حفظ التغييرات' للتأكيد", "error");
             }
         }
 
@@ -510,7 +529,7 @@
             };
             setUnsavedState(true);
             renderBuilding();
-            showToast("تمت إضافة الغرفة local", "success");
+            showToast("تمت إضافة الغرفة. اضغط حفظ التغييرات", "success");
         }
 
         function deleteRoom(aptKey, rKey) {
@@ -518,7 +537,7 @@
                 delete buildingData[aptKey].rooms[rKey];
                 setUnsavedState(true);
                 renderBuilding();
-                showToast("تم حذف الغرفة local", "error");
+                showToast("تم حذف الغرفة محلياً", "error");
             }
         }
 
@@ -534,7 +553,7 @@
             };
             setUnsavedState(true);
             renderBuilding();
-            showToast("تم إضافة السرير local", "success");
+            showToast("تم إضافة السرير محلياً", "success");
         }
 
         function deleteBed(aptKey, rKey, bKey) {
@@ -542,11 +561,11 @@
                 delete buildingData[aptKey].rooms[rKey].beds[bKey];
                 setUnsavedState(true);
                 renderBuilding();
-                showToast("تم حذف السرير local", "error");
+                showToast("تم حذف السرير محلياً", "error");
             }
         }
 
-        // --- SELECTION & SELECTION COLOR FIX ---
+        // --- SELECTION & BED CLICK ---
 
         function handleBedClick(aptKey, rKey, bKey) {
             const bed = buildingData[aptKey].rooms[rKey].beds[bKey];
@@ -557,7 +576,7 @@
                     db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
                         booked: false, bookedBy: null, phone: null, age: null, college: null, bookingTime: null
                     });
-                    showToast("تم إتاحة السرير بنجاح!", "success");
+                    showToast("تم إتاحة السرير وإلغاء الحجز بنجاح!", "success");
                 }
                 return;
             }
@@ -595,7 +614,7 @@
             }
         }
 
-        // --- SUBMIT BOOKING (حفظ أوتوماتيكي + تحويل للواتساب) ---
+        // --- SUBMIT BOOKING ---
 
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -620,7 +639,7 @@
             const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
             const fullTimeStamp = `${days[now.getDay()]} ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()} - ${now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`;
 
-            // حفظ أوتوماتيكي صريح في قاعدة البيانات
+            // حفظ أوتوماتيكي في قاعدة البيانات للمستخدم
             selectedBeds.forEach(id => {
                 const [aptKey, rKey, bKey] = id.split('_');
                 db.ref(`building/${aptKey}/rooms/${rKey}/beds/${bKey}`).update({
@@ -648,9 +667,9 @@
 
         function closeModal() { document.getElementById('whatsappModal').classList.remove('active'); }
 
-        // Admin Modal Controls
+        // Admin Modals & Login
         function openAdminModal() {
-            if (isAdmin) { showToast("أنت في وضع الإدارة.", "success"); return; }
+            if (isAdmin) { showToast("أنت بالفعل في وضع الإدارة.", "success"); return; }
             document.getElementById('adminLoginModal').classList.add('active');
         }
         function closeAdminModal() { document.getElementById('adminLoginModal').classList.remove('active'); }
