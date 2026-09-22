@@ -388,11 +388,12 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;padding:30px 20px 1
 </div>
 
 <script>
+// تم تحديث الـ CONFIG لربط قاعدة البيانات الخاصّة بك مباشرة
 const CONFIG = {
   apiKey: "",
-  authDomain: "kasr-al-amirat.firebaseapp.com",
-  databaseURL: "https://kasr-al-amirat-default-rtdb.firebaseio.com/",
-  projectId: "kasr-al-amirat"
+  authDomain: "ssnnss-5e514.firebaseapp.com",
+  databaseURL: "https://ssnnss-5e514-default-rtdb.firebaseio.com/",
+  projectId: "ssnnss-5e514"
 };
 const FALLBACK_ADMIN_USER = "man3am";
 const FALLBACK_ADMIN_HASH = "7f1f487eedb997cbecd88f74cdfb4a1a519b883a6e623a0ed1d6b04371b9116f"; // = 5515879462
@@ -480,7 +481,7 @@ function totalPrice() {
 }
 
 db.ref('.info/connected').on('value', s => {
-  const dot = $('syncDot'), label = $('syncLabel'), on = s.val() === true;
+  const dot = $('syncDot'), label =$('syncLabel'), on = s.val() === true;
   dot.className = 'sync-dot ' + (on ? 'on' : 'off');
   label.textContent = on ? 'متصل — كل تغيير يتحفظ فوراً' : 'غير متصل بالسيرفر...';
 });
@@ -566,7 +567,7 @@ function render() {
 }
 
 function updateSelectedUI() {
-  const list = $('selectedBedsList'), btn = $('submitBtn');
+  const list = $('selectedBedsList'), btn =$('submitBtn');
   if (!selectedBeds.length) {
     list.textContent = 'اضغط على سرير متاح في الأعلى لاختياره.';
     btn.disabled = true; btn.textContent = 'اختر سرير أولاً';
@@ -713,7 +714,7 @@ $('bookingForm').addEventListener('submit', async e => {
     updates['bookings/' + bookingId] = { name, phone, age, college, price, beds: selectedBeds.map((k, i) => ({ key: k, label: labels[i] })), ts: firebase.database.ServerValue.TIMESTAMP };
     await db.ref().update(updates);
 
-    $('modalText').innerHTML = `شكراً <strong>${esc(name)}</strong><br>تم حجز:<br>${labels.map(esc).join('<br>')}${price ? `<br><br>الإجمالي: <strong>${price} ${CURRENCY}</strong>` : ''}<br><br>انضمي لجروب الواتساب لتصلك كل التفاصيل.`;
+    $('modalText').innerHTML = `شكراً <strong>${esc(name)}</strong><br>تم حجز:<br>${labels.map(esc).join('<br>')}${price ? `<br><br>الإجمالي: <strong>${price}${CURRENCY}</strong>` : ''}<br><br>انضمي لجروب الواتساب لتصلك كل التفاصيل.`;
     $('whatsappGroupLink').href = WHATSAPP_LINK;
     $('whatsappModal').classList.add('active');
     selectedBeds = [];
@@ -738,12 +739,11 @@ function setAdmin(v) {
 }
 function openAdminModal() {
   $('adminUsername').placeholder = USE_AUTH ? 'البريد الإلكتروني' : 'اسم المستخدم';
-  $('adminLoginModal').classList.add('active');
-  $('adminUsername').focus();
+  $('adminLoginModal').classList.add('active');$('adminUsername').focus();
 }
-function closeAdminModal() { $('adminLoginModal').classList.remove('active'); $('adminPassword').value = ''; }
+function closeAdminModal() { $('adminLoginModal').classList.remove('active');$('adminPassword').value = ''; }
 async function processAdminLogin() {
-  const u = $('adminUsername').value.trim(), p = $('adminPassword').value;
+  const u = $('adminUsername').value.trim(), p =$('adminPassword').value;
   if (USE_AUTH) {
     try { await firebase.auth().signInWithEmailAndPassword(u, p); closeAdminModal(); showToast('أهلاً بيك في لوحة الإدارة'); }
     catch (e) { showToast('بيانات الدخول غير صحيحة', 'error'); }
@@ -762,8 +762,7 @@ else if (sessionStorage.getItem('kaAdmin') === '1') setAdmin(true);
 $('adminPassword').addEventListener('keydown', e => { if (e.key === 'Enter') processAdminLogin(); });
 
 function openBookingsTable() {
-  $('adminBookingsModal').classList.add('active');
-  $('bookingsTableDiv').textContent = 'جاري التحميل...';
+  $('adminBookingsModal').classList.add('active');$('bookingsTableDiv').textContent = 'جاري التحميل...';
   db.ref('bookings').once('value').then(s => { bookingsCache = s.val() || {}; renderBookings(); }).catch(handleErr);
 }
 function closeBookingsModal() { $('adminBookingsModal').classList.remove('active'); }
@@ -772,7 +771,7 @@ function renderBookings() {
   if (!rows.length) { $('bookingsTableDiv').textContent = 'لا يوجد حجوزات مسجلة حالياً.'; return; }
   const totalRevenue = rows.reduce((s, [, b]) => s + (Number(b.price) || 0), 0);
   $('bookingsTableDiv').innerHTML =
-    `<div style="color:var(--muted);font-size:.85rem;margin:6px 0 4px">إجمالي الحجوزات: ${rows.length}${totalRevenue ? ` — إجمالي القيمة: ${totalRevenue} ${CURRENCY}` : ''}</div>
+    `<div style="color:var(--muted);font-size:.85rem;margin:6px 0 4px">إجمالي الحجوزات: ${rows.length}${totalRevenue ? ` — إجمالي القيمة: ${totalRevenue}${CURRENCY}` : ''}</div>
     <div class="table-wrap"><table><tr><th>#</th><th>الاسم</th><th>الهاتف</th><th>السن</th><th>الكلية</th><th>السراير</th><th>السعر</th><th>الوقت</th><th></th></tr>` +
     rows.map(([id, b], i) => `<tr><td>${i + 1}</td><td>${esc(b.name)}</td><td><a href="https://wa.me/20${esc(String(b.phone).slice(1))}" target="_blank" rel="noopener">${esc(b.phone)}</a></td><td>${esc(b.age)}</td><td>${esc(b.college)}</td><td>${(b.beds || []).map(x => esc(x.label)).join('<br>')}</td><td>${b.price ? esc(b.price) + ' ' + CURRENCY : '—'}</td><td>${b.ts ? new Date(b.ts).toLocaleString('ar-EG') : ''}</td><td><button type="button" class="mini danger" onclick="cancelBooking('${id}')">إلغاء</button></td></tr>`).join('') +
     '</table></div>';
